@@ -22,7 +22,7 @@ named!(
 /// Parse a 3-byte hexadecimal RGB color.
 named!(
     rgb<Rgb<u8>>,
-    map!(count_fixed!(u8, call!(hex_u8), 3), |rgb| { Rgb(rgb) })
+    map!(count!(u8, call!(hex_u8), 3), |rgb| { Rgb(rgb) })
 );
 
 /// The 16-color pallette used by the subtitles.

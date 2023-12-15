@@ -4,7 +4,9 @@
 //! in a `*.sub` file.
 
 use nom::{
-    alt, be_u16, be_u8, bits, call, do_parse, length_value, named, rest, tag, value, IResult,
+    alt, bits, call, do_parse, length_value, named,
+    number::complete::{be_u16, be_u8},
+    rest, tag, value, IResult,
 };
 use std::fmt;
 
@@ -30,9 +32,9 @@ pub enum PtsDtsFlags {
 
 /// Parse PTS & DTS flags in a PES packet header.  Consumes two bits.
 named!(pts_dts_flags<(&[u8], usize), PtsDtsFlags>,
-   alt!(value!(PtsDtsFlags::None,   tag_bits!(u8, 2, 0b00)) |
-        value!(PtsDtsFlags::Pts,    tag_bits!(u8, 2, 0b10)) |
-        value!(PtsDtsFlags::PtsDts, tag_bits!(u8, 2, 0b11)))
+   alt!(value!(PtsDtsFlags::None,   tag_bits!(2u8, 0b00)) |
+        value!(PtsDtsFlags::Pts,    tag_bits!(2u8, 0b10)) |
+        value!(PtsDtsFlags::PtsDts, tag_bits!(2u8, 0b11)))
 );
 
 /// Presentation and Decode Time Stamps, if available.
@@ -48,7 +50,7 @@ pub struct PtsDts {
 named!(
     pts_only<PtsDts>,
     bits!(do_parse!(
-        tag_bits!(u8, 4, 0b0010) >>
+        tag_bits!(4u8, 0b0010) >>
         pts: call!(clock) >>
         (PtsDts { pts, dts: None })
     ))
@@ -58,9 +60,9 @@ named!(
 named!(
     pts_and_dts<PtsDts>,
     bits!(do_parse!(
-        tag_bits!(u8, 4, 0b0011) >>
+        tag_bits!(4u8, 0b0011) >>
         pts: call!(clock) >>
-        tag_bits!(u8, 4, 0b0001) >>
+        tag_bits!(4u8, 0b0001) >>
         dts: call!(clock) >>
         (PtsDts { pts, dts: Some(dts) })
     ))
@@ -89,7 +91,7 @@ pub struct HeaderDataFlags {
 
 /// Deserialize a single Boolean flag bit.
 named!(bool_flag<(&[u8], usize), bool>,
-    map!(take_bits!(u8, 1), |b| b == 1)
+    map!(take_bits!(1u8), |b| b == 1)
 );
 
 named!(
@@ -167,8 +169,8 @@ pub struct Header {
 named!(
     header<Header>,
     bits!(do_parse!(
-        tag_bits!(u8, 2, 0b10) >>
-        scrambling_control: take_bits!(u8, 2) >>
+        tag_bits!(2u8, 0b10) >>
+        scrambling_control: take_bits!(2u8) >>
         priority: call!(bool_flag) >>
         data_alignment_indicator: call!(bool_flag) >>
         copyright: call!(bool_flag) >>

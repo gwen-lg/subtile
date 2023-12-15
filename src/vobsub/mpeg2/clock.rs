@@ -49,17 +49,17 @@ impl fmt::Display for Clock {
 named!(pub clock<(&[u8], usize), Clock>,
     do_parse!(
         // Bits 32..30.
-        hi: take_bits!(u64, 3) >>
+        hi: take_bits!(3u64) >>
         // Marker bit.
-        tag_bits!(u8, 1, 0b1) >>
+        tag_bits!(1u8, 0b1) >>
         // Bits 29..15.
-        mid: take_bits!(u64, 15) >>
+        mid: take_bits!(15u64) >>
         // Marker bit.
-        tag_bits!(u8, 1, 0b1) >>
+        tag_bits!(1u8, 0b1) >>
         // Bits 14..0.
-        lo: take_bits!(u64, 15) >>
+        lo: take_bits!(15u64) >>
         // Marker bit.
-        tag_bits!(u8, 1, 0b1) >>
+        tag_bits!(1u8, 0b1) >>
         (Clock::base(hi << 30 | mid << 15 | lo))
     )
 );
@@ -69,9 +69,9 @@ named!(pub clock<(&[u8], usize), Clock>,
 named!(pub clock_and_ext<(&[u8], usize), Clock>,
     do_parse!(
         clock: call!(clock) >>
-        ext: take_bits!(u16, 9) >>
+        ext: take_bits!(9u16) >>
         // Marker bit.
-        tag_bits!(u8, 1, 0b1) >>
+        tag_bits!(1u8, 0b1) >>
         (clock.with_ext(ext))
     )
 );

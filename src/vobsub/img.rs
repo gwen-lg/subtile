@@ -31,15 +31,15 @@ struct Rle {
 named!(count<(&[u8], usize), u16>,
     alt!(
         // Fill to end of line.
-        value!(0, tag_bits!(u16, 14, 0)) |
+        value!(0, tag_bits!(14u16, 0)) |
         // Count for 4-nibble RLE.
-        preceded!(tag_bits!(u8, 6, 0), take_bits!(u16, 8)) |
+        preceded!(tag_bits!(6u8, 0), take_bits!(8u16)) |
         // Count for 3-nibble RLE.
-        preceded!(tag_bits!(u8, 4, 0), take_bits!(u16, 6)) |
+        preceded!(tag_bits!(4u8, 0), take_bits!(6u16)) |
         // Count for 2-nibble RLE.
-        preceded!(tag_bits!(u8, 2, 0), take_bits!(u16, 4)) |
+        preceded!(tag_bits!(2u8, 0), take_bits!(4u16)) |
         // Count for 1-nibble RLE.
-        take_bits!(u16, 2)
+        take_bits!(2u16)
     )
 );
 
@@ -47,7 +47,7 @@ named!(count<(&[u8], usize), u16>,
 named!(rle<(&[u8], usize), Rle>,
     do_parse!(
         cnt: call!(count) >>
-        val: take_bits!(u8, 2) >>
+        val: take_bits!(2u8) >>
         (Rle { cnt, val })
     )
 );
@@ -83,10 +83,10 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize> {
                         needed
                     ));
                 }
-                nom::Err::Error(nom::Context::Code(_, err)) => {
+                nom::Err::Error(err) => {
                     return Err(format_err!("error parsing subtitle scan line: {:?}", err));
                 }
-                nom::Err::Failure(nom::Context::Code(_, err)) => {
+                nom::Err::Failure(err) => {
                     return Err(format_err!("Failure parsing subtitle scan line: {:?}", err));
                 }
             },

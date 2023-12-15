@@ -52,11 +52,11 @@ impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E>
             }
             IResult::Err(err) => match err {
                 nom::Err::Incomplete(_) => Err(VobsubError::IncompleteInput.into()),
-                nom::Err::Error(nom::Context::Code(_, err)) => Err(VobsubError::Parse {
+                nom::Err::Error(err) => Err(VobsubError::Parse {
                     message: format!("{:?}", err),
                 }
                 .into()),
-                nom::Err::Failure(nom::Context::Code(_, err)) => Err(VobsubError::Parse {
+                nom::Err::Failure(err) => Err(VobsubError::Parse {
                     message: format!("{:?}", err),
                 }
                 .into()),

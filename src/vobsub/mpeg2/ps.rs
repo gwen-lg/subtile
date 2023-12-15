@@ -42,17 +42,17 @@ named!(pub header<Header>,
         header: bits!(
             do_parse!(
                 // MPEG-2 version tag.
-                tag_bits!(u8, 2, 0b01) >>
+                tag_bits!(2u8, 0b01) >>
                 // System Clock Reference.
                 scr: call!(clock_and_ext) >>
                 // Bit rate.
-                bit_rate: take_bits!(u32, 22) >>
+                bit_rate: take_bits!(22u32) >>
                 // Marker bits.
-                tag_bits!(u8, 2, 0b11) >>
+                tag_bits!(2u8, 0b11) >>
                 // Reserved.
-                take_bits!(u8, 5) >>
+                take_bits!(5u8) >>
                 // Number of bytes of stuffing.
-                stuffing_length: take_bits!(usize, 3) >>
+                stuffing_length: take_bits!(3usize) >>
                 // Stuffing bytes.  We just want to ignore these, but use a
                 // large enough type to prevent overflow panics when
                 // fuzzing.
@@ -128,13 +128,13 @@ impl<'a> Iterator for PesPackets<'a> {
                         }
                         // We got something that looked like a packet but
                         // wasn't parseable.  Log it and keep trying.
-                        nom::Err::Error(nom::Context::Code(_, err)) => {
+                        nom::Err::Error(err) => {
                             self.remaining = &self.remaining[needle.len()..];
                             debug!("Skipping packet {:?}", &err);
                         }
                         // We got something that looked like a packet but
                         // wasn't parseable.  Log it and keep trying.
-                        nom::Err::Failure(nom::Context::Code(_, err)) => {
+                        nom::Err::Failure(err) => {
                             self.remaining = &self.remaining[needle.len()..];
                             debug!("Skipping packet {:?}", &err);
                         }

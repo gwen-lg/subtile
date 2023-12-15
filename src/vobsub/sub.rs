@@ -7,7 +7,7 @@
 use cast;
 use failure::format_err;
 use log::{trace, warn};
-use nom::{be_u16, IResult};
+use nom::{number::complete::be_u16, IResult};
 use std::{cmp::Ordering, fmt};
 
 use super::img::{decompress, Size};
@@ -26,10 +26,7 @@ const DEFAULT_SUBTITLE_SPACING: f64 = 0.001;
 const DEFAULT_SUBTITLE_LENGTH: f64 = 5.0;
 
 /// Parse four 4-bit palette entries.
-named!(
-    palette_entries<[u8; 4]>,
-    bits!(count_fixed!(u8, take_bits!(u8, 4), 4))
-);
+named!(palette_entries<[u8; 4]>, bits!(count!(take_bits!(4u8), 4)));
 
 /// Location at which to display the subtitle.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -71,7 +68,7 @@ impl Coordinates {
 }
 
 /// Parse a 12-bit coordinate value.
-named!(coordinate<(&[u8], usize), u16>, take_bits!(u16, 12));
+named!(coordinate<(&[u8], usize), u16>, take_bits!(12u16));
 
 /// Parse four 12-bit coordinate values as a rectangle (with right and
 /// bottom coordinates inclusive).
@@ -92,10 +89,7 @@ named!(
 );
 
 /// Parse a pair of 16-bit RLE offsets.
-named!(
-    rle_offsets<[u16; 2]>,
-    bits!(count_fixed!(u16, take_bits!(u16, 16), 2))
-);
+named!(rle_offsets<[u16; 2]>, bits!(count!(take_bits!(16u16), 2)));
 
 /// Individual commands which may appear in a control sequence.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -383,10 +377,10 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
                 nom::Err::Incomplete(_) => {
                     return Err(format_err!("incomplete control packet"));
                 }
-                nom::Err::Error(nom::Context::Code(_, err)) => {
+                nom::Err::Error(err) => {
                     return Err(format_err!("error parsing subtitle: {:?}", err));
                 }
-                nom::Err::Failure(nom::Context::Code(_, err)) => {
+                nom::Err::Failure(err) => {
                     return Err(format_err!("Failure parsing subtitle: {:?}", err));
                 }
             },
