@@ -55,7 +55,7 @@ mod tests {
         use nom::IResult;
         assert_eq!(
             rgb(&b"1234ab"[..]),
-            IResult::Done(&b""[..], Rgb::<u8>([0x12, 0x34, 0xab]))
+            IResult::Ok((&b""[..], Rgb::<u8>([0x12, 0x34, 0xab])))
         );
     }
 
@@ -65,29 +65,26 @@ mod tests {
         let input = b"\
 000000, f0f0f0, cccccc, 999999, 3333fa, 1111bb, fa3333, bb1111, \
 33fa33, 11bb11, fafa33, bbbb11, fa33fa, bb11bb, 33fafa, 11bbbb";
-        assert_eq!(
-            palette(input),
-            IResult::Done(
-                &[][..],
-                [
-                    Rgb([0x00, 0x00, 0x00]),
-                    Rgb([0xf0, 0xf0, 0xf0]),
-                    Rgb([0xcc, 0xcc, 0xcc]),
-                    Rgb([0x99, 0x99, 0x99]),
-                    Rgb([0x33, 0x33, 0xfa]),
-                    Rgb([0x11, 0x11, 0xbb]),
-                    Rgb([0xfa, 0x33, 0x33]),
-                    Rgb([0xbb, 0x11, 0x11]),
-                    Rgb([0x33, 0xfa, 0x33]),
-                    Rgb([0x11, 0xbb, 0x11]),
-                    Rgb([0xfa, 0xfa, 0x33]),
-                    Rgb([0xbb, 0xbb, 0x11]),
-                    Rgb([0xfa, 0x33, 0xfa]),
-                    Rgb([0xbb, 0x11, 0xbb]),
-                    Rgb([0x33, 0xfa, 0xfa]),
-                    Rgb([0x11, 0xbb, 0xbb])
-                ]
-            )
-        );
+        assert_eq!(palette(input), {
+            let palette = [
+                Rgb([0x00, 0x00, 0x00]),
+                Rgb([0xf0, 0xf0, 0xf0]),
+                Rgb([0xcc, 0xcc, 0xcc]),
+                Rgb([0x99, 0x99, 0x99]),
+                Rgb([0x33, 0x33, 0xfa]),
+                Rgb([0x11, 0x11, 0xbb]),
+                Rgb([0xfa, 0x33, 0x33]),
+                Rgb([0xbb, 0x11, 0x11]),
+                Rgb([0x33, 0xfa, 0x33]),
+                Rgb([0x11, 0xbb, 0x11]),
+                Rgb([0xfa, 0xfa, 0x33]),
+                Rgb([0xbb, 0xbb, 0x11]),
+                Rgb([0xfa, 0x33, 0xfa]),
+                Rgb([0xbb, 0x11, 0xbb]),
+                Rgb([0x33, 0xfa, 0xfa]),
+                Rgb([0x11, 0xbb, 0xbb]),
+            ];
+            IResult::Ok((&[][..], palette))
+        });
     }
 }

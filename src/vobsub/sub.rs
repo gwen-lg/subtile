@@ -320,7 +320,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
 
         let control_data = &raw_data[control_offset..];
         match control_sequence(control_data) {
-            IResult::Done(_, control) => {
+            IResult::Ok((_, control)) => {
                 trace!("parsed control sequence: {:?}", &control);
 
                 // Extract as much data as we can from this control sequence.
@@ -379,12 +379,17 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
                     }
                 }
             }
-            IResult::Incomplete(_) => {
-                return Err(format_err!("incomplete control packet"));
-            }
-            IResult::Error(err) => {
-                return Err(format_err!("error parsing subtitle: {:?}", err));
-            }
+            IResult::Err(err) => match err {
+                nom::Err::Incomplete(_) => {
+                    return Err(format_err!("incomplete control packet"));
+                }
+                nom::Err::Error(nom::Context::Code(_, err)) => {
+                    return Err(format_err!("error parsing subtitle: {:?}", err));
+                }
+                nom::Err::Failure(nom::Context::Code(_, err)) => {
+                    return Err(format_err!("Failure parsing subtitle: {:?}", err));
+                }
+            },
         }
     }
 
@@ -593,7 +598,7 @@ mod tests {
     fn parse_palette_entries() {
         assert_eq!(
             palette_entries(&[0x03, 0x10][..]),
-            IResult::Done(&[][..], [0x00, 0x03, 0x01, 0x00])
+            IResult::Ok((&[][..], [0x00, 0x03, 0x01, 0x00]))
         );
     }
 
@@ -621,7 +626,7 @@ mod tests {
         };
         assert_eq!(
             control_sequence(input_1),
-            IResult::Done(&[][..], expected_1)
+            IResult::Ok((&[][..], expected_1))
         );
 
         let input_2 = &[0x00, 0x77, 0x0f, 0x41, 0x02, 0xff][..];
@@ -632,7 +637,7 @@ mod tests {
         };
         assert_eq!(
             control_sequence(input_2),
-            IResult::Done(&[][..], expected_2)
+            IResult::Ok((&[][..], expected_2))
         );
 
         // An out of order example.
@@ -647,7 +652,7 @@ mod tests {
         };
         assert_eq!(
             control_sequence(input_3),
-            IResult::Done(&[][..], expected_3)
+            IResult::Ok((&[][..], expected_3))
         );
     }
 

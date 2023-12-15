@@ -112,24 +112,33 @@ impl<'a> Iterator for PesPackets<'a> {
                 self.remaining = &self.remaining[start..];
                 match pes_packet(self.remaining) {
                     // We found a packet!
-                    IResult::Done(remaining, packet) => {
+                    IResult::Ok((remaining, packet)) => {
                         self.remaining = remaining;
                         trace!("Decoded packet {:?}", &packet);
                         return Some(Ok(packet));
                     }
-                    // We have only a partial packet, and we hit the end of our
-                    // data.
-                    IResult::Incomplete(needed) => {
-                        self.remaining = &[];
-                        warn!("Incomplete packet, need: {:?}", needed);
-                        return Some(Err(format_err!("Incomplete PES packet")));
-                    }
-                    // We got something that looked like a packet but
-                    // wasn't parseable.  Log it and keep trying.
-                    IResult::Error(err) => {
-                        self.remaining = &self.remaining[needle.len()..];
-                        debug!("Skipping packet {:?}", &err);
-                    }
+
+                    IResult::Err(err) => match err {
+                        // We have only a partial packet, and we hit the end of our
+                        // data.
+                        nom::Err::Incomplete(needed) => {
+                            self.remaining = &[];
+                            warn!("Incomplete packet, need: {:?}", needed);
+                            return Some(Err(format_err!("Incomplete PES packet")));
+                        }
+                        // We got something that looked like a packet but
+                        // wasn't parseable.  Log it and keep trying.
+                        nom::Err::Error(nom::Context::Code(_, err)) => {
+                            self.remaining = &self.remaining[needle.len()..];
+                            debug!("Skipping packet {:?}", &err);
+                        }
+                        // We got something that looked like a packet but
+                        // wasn't parseable.  Log it and keep trying.
+                        nom::Err::Failure(nom::Context::Code(_, err)) => {
+                            self.remaining = &self.remaining[needle.len()..];
+                            debug!("Skipping packet {:?}", &err);
+                        }
+                    },
                 }
             } else {
                 // We didn't find the start of a packet.

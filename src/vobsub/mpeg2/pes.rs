@@ -69,9 +69,9 @@ named!(
 /// Parse a `PtsDts` value in the format specified by `flags`.
 fn pts_dts(i: &[u8], flags: PtsDtsFlags) -> IResult<&[u8], Option<PtsDts>> {
     match flags {
-        PtsDtsFlags::None => IResult::Done(i, None),
-        PtsDtsFlags::Pts => pts_only(i).map(Some),
-        PtsDtsFlags::PtsDts => pts_and_dts(i).map(Some),
+        PtsDtsFlags::None => IResult::Ok((i, None)),
+        PtsDtsFlags::Pts => pts_only(i).map(|(i, pts)| (i, Some(pts))),
+        PtsDtsFlags::PtsDts => pts_and_dts(i).map(|(i, ptsdts)| (i, Some(ptsdts))),
     }
 }
 
@@ -237,15 +237,15 @@ mod tests {
     fn parse_pts_dts_flags() {
         assert_eq!(
             pts_dts_flags((&[0b00][..], 6)),
-            IResult::Done((&[][..], 0), PtsDtsFlags::None)
+            IResult::Ok(((&[][..], 0), PtsDtsFlags::None))
         );
         assert_eq!(
             pts_dts_flags((&[0b10][..], 6)),
-            IResult::Done((&[][..], 0), PtsDtsFlags::Pts)
+            IResult::Ok(((&[][..], 0), PtsDtsFlags::Pts))
         );
         assert_eq!(
             pts_dts_flags((&[0b11][..], 6)),
-            IResult::Done((&[][..], 0), PtsDtsFlags::PtsDts)
+            IResult::Ok(((&[][..], 0), PtsDtsFlags::PtsDts))
         );
     }
 
@@ -253,16 +253,16 @@ mod tests {
     fn parse_pts_dts() {
         assert_eq!(
             pts_dts(&[][..], PtsDtsFlags::None),
-            IResult::Done(&[][..], None)
+            IResult::Ok((&[][..], None))
         );
         assert_eq!(
             pts_dts(&[0x21, 0x00, 0xab, 0xe9, 0xc1][..], PtsDtsFlags::Pts),
-            IResult::Done(
+            IResult::Ok((
                 &[][..],
                 Some(PtsDts {
                     pts: Clock::base(2815200),
                     dts: None,
-                })
+                }))
             )
         );
     }
@@ -271,13 +271,13 @@ mod tests {
     fn parse_header_data_flags() {
         assert_eq!(
             header_data_flags(&[0x80][..]),
-            IResult::Done(
+            IResult::Ok((
                 &[][..],
                 HeaderDataFlags {
                     pts_dts_flags: PtsDtsFlags::Pts,
                     ..HeaderDataFlags::default()
                 }
-            )
+            ))
         );
     }
 
@@ -285,11 +285,11 @@ mod tests {
     fn parse_header_data() {
         assert_eq!(
             header_data(&[0x00, 0x00][..]),
-            IResult::Done(&[][..], HeaderData::default())
+            IResult::Ok((&[][..], HeaderData::default()))
         );
         assert_eq!(
             header_data(&[0x80, 0x05, 0x21, 0x00, 0xab, 0xe9, 0xc1][..]),
-            IResult::Done(
+            IResult::Ok((
                 &[][..],
                 HeaderData {
                     flags: HeaderDataFlags {
@@ -302,7 +302,7 @@ mod tests {
                     }),
                     ..HeaderData::default()
                 }
-            )
+            ))
         );
     }
 
@@ -333,6 +333,6 @@ mod tests {
             data: &[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
         };
 
-        assert_eq!(packet(input), IResult::Done(&[0xff][..], expected));
+        assert_eq!(packet(input), IResult::Ok((&[0xff][..], expected)));
     }
 }

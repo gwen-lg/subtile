@@ -36,25 +36,31 @@ pub trait IResultExt<I, O, E> {
 impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E> {
     fn ignore_trailing_data(self) -> IResult<I, O, E> {
         match self {
-            IResult::Done(_, val) => IResult::Done(I::default(), val),
+            IResult::Ok((_, val)) => IResult::Ok((I::default(), val)),
             other => other,
         }
     }
 
     fn to_vobsub_result(self) -> Result<O> {
         match self {
-            IResult::Done(rest, val) => {
+            IResult::Ok((rest, val)) => {
                 if rest == I::default() {
                     Ok(val)
                 } else {
                     Err(VobsubError::UnexpectedInput.into())
                 }
             }
-            IResult::Incomplete(_) => Err(VobsubError::IncompleteInput.into()),
-            IResult::Error(err) => Err(VobsubError::Parse {
-                message: format!("{:?}", err),
-            }
-            .into()),
+            IResult::Err(err) => match err {
+                nom::Err::Incomplete(_) => Err(VobsubError::IncompleteInput.into()),
+                nom::Err::Error(nom::Context::Code(_, err)) => Err(VobsubError::Parse {
+                    message: format!("{:?}", err),
+                }
+                .into()),
+                nom::Err::Failure(nom::Context::Code(_, err)) => Err(VobsubError::Parse {
+                    message: format!("{:?}", err),
+                }
+                .into()),
+            },
         }
     }
 }

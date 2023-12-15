@@ -61,7 +61,7 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize> {
     let mut pos = (input, 0);
     while x < width {
         match rle(pos) {
-            IResult::Done(new_pos, run) => {
+            IResult::Ok((new_pos, run)) => {
                 //trace!("RLE: {:?}", &run);
                 pos = new_pos;
                 let count = if run.cnt == 0 {
@@ -75,16 +75,21 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize> {
                 write_bytes(&mut output[x..x + count], run.val);
                 x += count;
             }
-            IResult::Error(err) => {
-                return Err(format_err!("error parsing subtitle scan line: {:?}", err));
-            }
-            IResult::Incomplete(needed) => {
-                return Err(format_err!(
-                    "not enough bytes parsing subtitle scan \
-                                       line: {:?}",
-                    needed
-                ));
-            }
+            IResult::Err(err) => match err {
+                nom::Err::Incomplete(needed) => {
+                    return Err(format_err!(
+                        "not enough bytes parsing subtitle scan \
+                                           line: {:?}",
+                        needed
+                    ));
+                }
+                nom::Err::Error(nom::Context::Code(_, err)) => {
+                    return Err(format_err!("error parsing subtitle scan line: {:?}", err));
+                }
+                nom::Err::Failure(nom::Context::Code(_, err)) => {
+                    return Err(format_err!("Failure parsing subtitle scan line: {:?}", err));
+                }
+            },
         }
     }
     if x > width {
