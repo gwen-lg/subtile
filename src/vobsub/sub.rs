@@ -5,15 +5,14 @@
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
 use cast;
-use common_failures::prelude::*;
 use nom::{be_u16, IResult};
 use std::fmt;
 
-use idx;
+use super::idx;
+use super::img::{decompress, Size};
+use super::mpeg2::ps;
+use crate::{util::BytesFormatter, Error, Result};
 use image::{ImageBuffer, Rgba, RgbaImage};
-use img::{decompress, Size};
-use mpeg2::ps;
-use util::BytesFormatter;
 
 /// The default time between two adjacent subtitles if no end time is
 /// provided.  This is chosen to be a value that's usually representable in
@@ -25,12 +24,17 @@ const DEFAULT_SUBTITLE_SPACING: f64 = 0.001;
 const DEFAULT_SUBTITLE_LENGTH: f64 = 5.0;
 
 /// Parse four 4-bit palette entries.
-named!(palette_entries<[u8; 4]>, bits!(count_fixed!(u8, take_bits!(u8, 4), 4)));
+named!(
+    palette_entries<[u8; 4]>,
+    bits!(count_fixed!(u8, take_bits!(u8, 4), 4))
+);
 
 #[test]
 fn parse_palette_entries() {
-    assert_eq!(palette_entries(&[0x03, 0x10][..]),
-               IResult::Done(&[][..], [0x00, 0x03, 0x01, 0x00]));
+    assert_eq!(
+        palette_entries(&[0x03, 0x10][..]),
+        IResult::Done(&[][..], [0x00, 0x03, 0x01, 0x00])
+    );
 }
 
 /// Location at which to display the subtitle.
@@ -77,25 +81,27 @@ named!(coordinate<(&[u8], usize), u16>, take_bits!(u16, 12));
 
 /// Parse four 12-bit coordinate values as a rectangle (with right and
 /// bottom coordinates inclusive).
-named!(coordinates<Coordinates>,
-    bits!(
-        do_parse!(
-            x1: call!(coordinate) >>
-            x2: call!(coordinate) >>
-            y1: call!(coordinate) >>
-            y2: call!(coordinate) >>
-            (Coordinates {
-                x1: x1,
-                y1: y1,
-                x2: x2,
-                y2: y2,
-            })
-        )
-    )
+named!(
+    coordinates<Coordinates>,
+    bits!(do_parse!(
+        x1: call!(coordinate) >>
+        x2: call!(coordinate) >>
+        y1: call!(coordinate) >>
+        y2: call!(coordinate) >>
+        (Coordinates {
+            x1: x1,
+            y1: y1,
+            x2: x2,
+            y2: y2,
+        })
+    ))
 );
 
 /// Parse a pair of 16-bit RLE offsets.
-named!(rle_offsets<[u16; 2]>, bits!(count_fixed!(u16, take_bits!(u16, 16), 2)));
+named!(
+    rle_offsets<[u16; 2]>,
+    bits!(count_fixed!(u16, take_bits!(u16, 16), 2))
+);
 
 /// Individual commands which may appear in a control sequence.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -124,7 +130,8 @@ enum ControlCommand<'a> {
 }
 
 /// Parse a single command in a control sequence.
-named!(control_command<ControlCommand>,
+named!(
+    control_command<ControlCommand>,
     alt!(
         value!(ControlCommand::Force, tag!(&[0x00])) |
         value!(ControlCommand::StartDate, tag!(&[0x01])) |
@@ -164,7 +171,8 @@ struct ControlSequence<'a> {
 }
 
 /// Parse a single control sequence.
-named!(control_sequence<ControlSequence>,
+named!(
+    control_sequence<ControlSequence>,
     do_parse!(
         date: call!(be_u16) >>
         next: call!(be_u16) >>
@@ -181,13 +189,8 @@ named!(control_sequence<ControlSequence>,
 #[test]
 fn parse_control_sequence() {
     let input_1 = &[
-        0x00, 0x00, 0x0f, 0x41,
-        0x01,
-        0x03, 0x03, 0x10,
-        0x04, 0xff, 0xf0,
-        0x05, 0x29, 0xb4, 0xe6, 0x3c, 0x54, 0x00,
-        0x06, 0x00, 0x04, 0x07, 0x7b,
-        0xff
+        0x00, 0x00, 0x0f, 0x41, 0x01, 0x03, 0x03, 0x10, 0x04, 0xff, 0xf0, 0x05, 0x29, 0xb4, 0xe6,
+        0x3c, 0x54, 0x00, 0x06, 0x00, 0x04, 0x07, 0x7b, 0xff,
     ][..];
     let expected_1 = ControlSequence {
         date: 0x0000,
@@ -203,42 +206,38 @@ fn parse_control_sequence() {
                 y2: 0x400,
             }),
             ControlCommand::RleOffsets([0x0004, 0x077b]),
-        ]
+        ],
     };
-    assert_eq!(control_sequence(input_1),
-               IResult::Done(&[][..], expected_1));
+    assert_eq!(
+        control_sequence(input_1),
+        IResult::Done(&[][..], expected_1)
+    );
 
-    let input_2 = &[
-        0x00, 0x77, 0x0f, 0x41,
-        0x02,
-        0xff
-    ][..];
+    let input_2 = &[0x00, 0x77, 0x0f, 0x41, 0x02, 0xff][..];
     let expected_2 = ControlSequence {
         date: 0x0077,
         next: 0x0f41,
         commands: vec![ControlCommand::StopDate],
     };
-    assert_eq!(control_sequence(input_2),
-               IResult::Done(&[][..], expected_2));
+    assert_eq!(
+        control_sequence(input_2),
+        IResult::Done(&[][..], expected_2)
+    );
 
     // An out of order example.
     let input_3 = &[
-        0x00, 0x00, 0x0b, 0x30,
-        0x01,
-        0x00,
-        // ...other commands would appear here...
+        0x00, 0x00, 0x0b, 0x30, 0x01, 0x00, // ...other commands would appear here...
         0xff,
     ][..];
     let expected_3 = ControlSequence {
         date: 0x0000,
         next: 0x0b30,
-        commands: vec![
-            ControlCommand::StartDate,
-            ControlCommand::Force,
-        ],
+        commands: vec![ControlCommand::StartDate, ControlCommand::Force],
     };
-    assert_eq!(control_sequence(input_3),
-               IResult::Done(&[][..], expected_3));
+    assert_eq!(
+        control_sequence(input_3),
+        IResult::Done(&[][..], expected_3)
+    );
 }
 
 /// A single subtitle.
@@ -308,15 +307,17 @@ impl Subtitle {
         let width = cast::u32(self.coordinates.width());
         let height = cast::u32(self.coordinates.height());
         ImageBuffer::from_fn(width, height, |x, y| {
-            let offset = cast::usize(y*width + x);
+            let offset = cast::usize(y * width + x);
             // We need to subtract the raw index from 3 to get the same
             // results as everybody else.  I found this by inspecting the
             // Handbrake subtitle decoding routines.
-            let px = cast::usize(3-self.raw_image[offset]);
+            let px = cast::usize(3 - self.raw_image[offset]);
             let rgb = palette[cast::usize(self.palette[px])].data;
             let a = self.alpha[px];
             let aa = a << 4 | a;
-            Rgba { data: [rgb[0], rgb[1], rgb[2], aa] }
+            Rgba {
+                data: [rgb[0], rgb[1], rgb[2], aa],
+            }
         })
     }
 }
@@ -338,7 +339,9 @@ impl<'a> fmt::Debug for Subtitle {
 /// because it has an inconvenient error type.
 fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize)> {
     if buff.len() < 2 {
-        Err(format_err!("unexpected end of buffer while parsing 16-bit size"))
+        Err(format_err!(
+            "unexpected end of buffer while parsing 16-bit size"
+        ))
     } else {
         Ok((&buff[2..], usize::from(buff[0]) << 8 | usize::from(buff[1])))
     }
@@ -369,10 +372,12 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
     loop {
         trace!("looking for control sequence at: 0x{:x}", control_offset);
         if control_offset >= raw_data.len() {
-            return Err(format_err!("control offset is 0x{:x}, but packet is only 0x{:x} \
+            return Err(format_err!(
+                "control offset is 0x{:x}, but packet is only 0x{:x} \
                                    bytes",
-                                   control_offset,
-                                   raw_data.len()));
+                control_offset,
+                raw_data.len()
+            ));
         }
 
         let control_data = &raw_data[control_offset..];
@@ -415,8 +420,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
                             rle_offsets = Some(r);
                         }
                         ControlCommand::Unsupported(b) => {
-                            warn!("unsupported control sequence: {:?}",
-                                  BytesFormatter(b));
+                            warn!("unsupported control sequence: {:?}", BytesFormatter(b));
                         }
                     }
                 }
@@ -443,21 +447,12 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
     }
 
     // Make sure we found all the control commands that we expect.
-    let start_time = start_time.ok_or_else(|| {
-        format_err!("no start time for subtitle")
-    })?;
-    let coordinates = coordinates.ok_or_else(|| {
-        format_err!("no coordinates for subtitle")
-    })?;
-    let palette = palette.ok_or_else(|| -> Error {
-        format_err!("no palette for subtitle")
-    })?;
-    let alpha = alpha.ok_or_else(|| -> Error {
-        format_err!("no alpha for subtitle")
-    })?;
-    let rle_offsets = rle_offsets.ok_or_else(|| -> Error {
-        format_err!("no RLE offsets for subtitle")
-    })?;
+    let start_time = start_time.ok_or_else(|| format_err!("no start time for subtitle"))?;
+    let coordinates = coordinates.ok_or_else(|| format_err!("no coordinates for subtitle"))?;
+    let palette = palette.ok_or_else(|| -> Error { format_err!("no palette for subtitle") })?;
+    let alpha = alpha.ok_or_else(|| -> Error { format_err!("no alpha for subtitle") })?;
+    let rle_offsets =
+        rle_offsets.ok_or_else(|| -> Error { format_err!("no RLE offsets for subtitle") })?;
 
     // Decompress our image.
     //
@@ -474,13 +469,14 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
     // practice.)
     let start_0 = cast::usize(rle_offsets[0]);
     let start_1 = cast::usize(rle_offsets[1]);
-    let end = cast::usize(initial_control_offset+2);
+    let end = cast::usize(initial_control_offset + 2);
     if start_0 > start_1 || start_1 > end {
         return Err(format_err!("invalid scan line offsets"));
     }
-    let image = decompress(coordinates.size(),
-                           [&raw_data[start_0..end],
-                            &raw_data[start_1..end]])?;
+    let image = decompress(
+        coordinates.size(),
+        [&raw_data[start_0..end], &raw_data[start_1..end]],
+    )?;
 
     // Return our parsed subtitle.
     let result = Subtitle {
@@ -506,7 +502,7 @@ macro_rules! try_iter {
             Some(Err(e)) => return Some(Err(From::from(e))),
             Some(Ok(value)) => value,
         }
-    }
+    };
 }
 
 /// An internal iterator over subtitles.  These subtitles may not have a
@@ -536,8 +532,8 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
         if first.pes_packet.data.len() < 2 {
             return Some(Err(format_err!("packet is too short")));
         }
-        let wanted = usize::from(first.pes_packet.data[0]) << 8
-            | usize::from(first.pes_packet.data[1]);
+        let wanted =
+            usize::from(first.pes_packet.data[0]) << 8 | usize::from(first.pes_packet.data[1]);
         let mut sub_packet = first.pes_packet.data.to_owned();
 
         // Keep fetching more packets until we have enough.
@@ -548,8 +544,10 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
             // Make sure this is part of the same subtitle stream.  This is
             // mostly just paranoia; I don't expect this to happen.
             if next.pes_packet.substream_id != substream_id {
-                warn!("Found subtitle for stream 0x{:x} while looking for 0x{:x}",
-                      next.pes_packet.substream_id, substream_id);
+                warn!(
+                    "Found subtitle for stream 0x{:x} while looking for 0x{:x}",
+                    next.pes_packet.substream_id, substream_id
+                );
                 continue;
             }
 
@@ -560,8 +558,11 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
         // Check to make sure we didn't get too _many_ bytes.  Again, this
         // is paranoia.
         if sub_packet.len() > wanted {
-            warn!("Found 0x{:x} bytes of data in subtitle packet, wanted 0x{:x}",
-                  sub_packet.len(), wanted);
+            warn!(
+                "Found 0x{:x} bytes of data in subtitle packet, wanted 0x{:x}",
+                sub_packet.len(),
+                wanted
+            );
             sub_packet.truncate(wanted);
         }
 
@@ -588,7 +589,9 @@ impl<'a> Iterator for Subtitles<'a> {
         // one.
         if self.prev.is_none() {
             match self.internal.next() {
-                Some(Ok(sub)) => { self.prev = Some(sub); }
+                Some(Ok(sub)) => {
+                    self.prev = Some(sub);
+                }
                 other => return other,
             }
         }
@@ -620,8 +623,7 @@ impl<'a> Iterator for Subtitles<'a> {
                     if sub.end_time.is_none() {
                         // Our subtitle has no end time, and it's the last
                         // subtitle, so just pick something.
-                        sub.end_time =
-                            Some(sub.start_time + DEFAULT_SUBTITLE_LENGTH);
+                        sub.end_time = Some(sub.start_time + DEFAULT_SUBTITLE_LENGTH);
                     }
                     Ok(sub)
                 })
@@ -634,7 +636,7 @@ impl<'a> Iterator for Subtitles<'a> {
 pub fn subtitles(input: &[u8]) -> Subtitles {
     Subtitles {
         internal: SubtitlesInternal {
-            pes_packets: ps::pes_packets(input)
+            pes_packets: ps::pes_packets(input),
         },
         prev: None,
     }
@@ -656,10 +658,17 @@ fn parse_subtitles() {
     assert!(sub1.start_time - 49.4 < 0.1);
     assert!(sub1.end_time.unwrap() - 50.9 < 0.1);
     assert_eq!(sub1.force, false);
-    assert_eq!(sub1.coordinates,
-               Coordinates { x1: 750, y1: 916, x2: 1172, y2: 966 });
-    assert_eq!(sub1.palette, [0,3,1,0]);
-    assert_eq!(sub1.alpha, [15,15,15,0]);
+    assert_eq!(
+        sub1.coordinates,
+        Coordinates {
+            x1: 750,
+            y1: 916,
+            x2: 1172,
+            y2: 966
+        }
+    );
+    assert_eq!(sub1.palette, [0, 3, 1, 0]);
+    assert_eq!(sub1.alpha, [15, 15, 15, 0]);
     subs.next().expect("missing sub 2").unwrap();
     assert!(subs.next().is_none());
 }
@@ -683,9 +692,17 @@ fn parse_fuzz_corpus_seeds() {
 
     // Make sure these two fuzz corpus inputs still work, and that they
     // return the same subtitle data.
-    let tiny = Index::open("./fixtures/tiny.idx").unwrap()
-        .subtitles().next().unwrap().unwrap();
-    let split = Index::open("./fixtures/tiny-split.idx").unwrap()
-        .subtitles().next().unwrap().unwrap();
+    let tiny = Index::open("./fixtures/tiny.idx")
+        .unwrap()
+        .subtitles()
+        .next()
+        .unwrap()
+        .unwrap();
+    let split = Index::open("./fixtures/tiny-split.idx")
+        .unwrap()
+        .subtitles()
+        .next()
+        .unwrap()
+        .unwrap();
     assert_eq!(tiny, split);
 }

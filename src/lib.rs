@@ -12,7 +12,6 @@
 #![recursion_limit = "1024"]
 
 extern crate cast;
-extern crate common_failures;
 #[macro_use]
 extern crate failure;
 #[cfg(test)]
@@ -30,3 +29,17 @@ extern crate safemem;
 mod errors;
 mod util;
 pub mod vobsub;
+
+/// Re-export `failure::Error` for convenience.
+pub type Error = failure::Error;
+
+/// A short alias for `Result<T, failure::Error>`.
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// Import this module to get a useful error-handling API.
+pub mod prelude {
+    //    pub use display::DisplayCausesAndBacktraceExt;
+    pub use failure::ResultExt;
+    //    pub use io::{IoContextErrorExt, IoContextExt};
+    //  pub use {Error, Result};
+}

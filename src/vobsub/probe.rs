@@ -1,23 +1,26 @@
 //! Try to guess the types of files on disk.
 
-use common_failures::prelude::*;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 
+use crate::Result;
+use failure::ResultExt;
+
 /// Internal helper function which looks for "magic" bytes at the start of
 /// a file.
 fn has_magic(path: &Path, magic: &[u8]) -> Result<bool> {
-    let mut f = fs::File::open(path).io_read_context(path)?;
+    let mkerr = || format_err!("Could not open {}", path.display());
+
+    let mut f = fs::File::open(path).with_context(|_| mkerr())?;
     let mut bytes = vec![0; magic.len()];
-    f.read_exact(&mut bytes).io_read_context(path)?;
+    f.read_exact(&mut bytes).with_context(|_| mkerr())?;
     Ok(magic == &bytes[..])
 }
 
 /// Does the specified path appear to point to an `*.idx` file?
 pub fn is_idx_file<P: AsRef<Path>>(path: P) -> Result<bool> {
-    has_magic(path.as_ref(),
-              b"# VobSub index file")
+    has_magic(path.as_ref(), b"# VobSub index file")
 }
 
 #[test]
@@ -31,8 +34,7 @@ fn probe_idx_files() {
 /// Note that this may (or may not) return false positives for certain
 /// MPEG-2 related formats.
 pub fn is_sub_file<P: AsRef<Path>>(path: P) -> Result<bool> {
-    has_magic(path.as_ref(),
-              &[0x00, 0x00, 0x01, 0xba])
+    has_magic(path.as_ref(), &[0x00, 0x00, 0x01, 0xba])
 }
 
 #[test]

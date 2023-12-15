@@ -66,7 +66,8 @@ mod mpeg2;
 mod probe;
 mod sub;
 
+pub use crate::{Error, Result};
+
 pub use self::idx::{Index, Palette};
 pub use self::probe::{is_idx_file, is_sub_file};
 pub use self::sub::{subtitles, Coordinates, Subtitle, Subtitles};
-pub use common_failures::{Error, Result};
