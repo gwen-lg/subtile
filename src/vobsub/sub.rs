@@ -5,6 +5,7 @@
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
 use cast;
+use failure::format_err;
 use nom::{be_u16, IResult};
 use std::{cmp::Ordering, fmt};
 

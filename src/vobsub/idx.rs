@@ -1,6 +1,6 @@
 //! Parse a file in `*.idx` format.
 
-use failure::ResultExt;
+use failure::{format_err, ResultExt};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::fs;

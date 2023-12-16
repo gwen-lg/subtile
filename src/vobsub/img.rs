@@ -1,6 +1,7 @@
 //! Run-length encoded image format for subtitles.
 
 use cast;
+use failure::format_err;
 use nom::IResult;
 use safemem::write_bytes;
 

@@ -5,7 +5,7 @@ use std::io::Read;
 use std::path::Path;
 
 use crate::Result;
-use failure::ResultExt;
+use failure::{format_err, ResultExt};
 
 /// Internal helper function which looks for "magic" bytes at the start of
 /// a file.

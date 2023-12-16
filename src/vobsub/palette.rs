@@ -1,3 +1,4 @@
+use failure::format_err;
 use image::Rgb;
 
 /// Parse a single hexadecimal digit.

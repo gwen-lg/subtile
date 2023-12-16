@@ -12,8 +12,6 @@
 #![recursion_limit = "1024"]
 
 #[macro_use]
-extern crate failure;
-#[macro_use]
 extern crate log;
 #[macro_use]
 extern crate nom;
