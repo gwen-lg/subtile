@@ -35,22 +35,6 @@ named!(pts_dts_flags<(&[u8], usize), PtsDtsFlags>,
         value!(PtsDtsFlags::PtsDts, tag_bits!(u8, 2, 0b11)))
 );
 
-#[test]
-fn parse_pts_dts_flags() {
-    assert_eq!(
-        pts_dts_flags((&[0b00][..], 6)),
-        IResult::Done((&[][..], 0), PtsDtsFlags::None)
-    );
-    assert_eq!(
-        pts_dts_flags((&[0b10][..], 6)),
-        IResult::Done((&[][..], 0), PtsDtsFlags::Pts)
-    );
-    assert_eq!(
-        pts_dts_flags((&[0b11][..], 6)),
-        IResult::Done((&[][..], 0), PtsDtsFlags::PtsDts)
-    );
-}
-
 /// Presentation and Decode Time Stamps, if available.
 #[derive(Debug, PartialEq, Eq)]
 pub struct PtsDts {
@@ -89,24 +73,6 @@ fn pts_dts(i: &[u8], flags: PtsDtsFlags) -> IResult<&[u8], Option<PtsDts>> {
         PtsDtsFlags::Pts => pts_only(i).map(Some),
         PtsDtsFlags::PtsDts => pts_and_dts(i).map(Some),
     }
-}
-
-#[test]
-fn parse_pts_dts() {
-    assert_eq!(
-        pts_dts(&[][..], PtsDtsFlags::None),
-        IResult::Done(&[][..], None)
-    );
-    assert_eq!(
-        pts_dts(&[0x21, 0x00, 0xab, 0xe9, 0xc1][..], PtsDtsFlags::Pts),
-        IResult::Done(
-            &[][..],
-            Some(PtsDts {
-                pts: Clock::base(2815200),
-                dts: None,
-            })
-        )
-    );
 }
 
 /// Flags specifying which header data fields are present.
@@ -148,20 +114,6 @@ named!(
     ))
 );
 
-#[test]
-fn parse_header_data_flags() {
-    assert_eq!(
-        header_data_flags(&[0x80][..]),
-        IResult::Done(
-            &[][..],
-            HeaderDataFlags {
-                pts_dts_flags: PtsDtsFlags::Pts,
-                ..HeaderDataFlags::default()
-            }
-        )
-    );
-}
-
 /// Header data fields.
 #[non_exhaustive]
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -197,31 +149,6 @@ named!(
         (data)
     )
 );
-
-#[test]
-fn parse_header_data() {
-    assert_eq!(
-        header_data(&[0x00, 0x00][..]),
-        IResult::Done(&[][..], HeaderData::default())
-    );
-    assert_eq!(
-        header_data(&[0x80, 0x05, 0x21, 0x00, 0xab, 0xe9, 0xc1][..]),
-        IResult::Done(
-            &[][..],
-            HeaderData {
-                flags: HeaderDataFlags {
-                    pts_dts_flags: PtsDtsFlags::Pts,
-                    ..HeaderDataFlags::default()
-                },
-                pts_dts: Some(PtsDts {
-                    pts: Clock::base(2815200),
-                    dts: None,
-                }),
-                ..HeaderData::default()
-            }
-        )
-    );
-}
 
 /// A [Packetized Elementary Stream][pes] header, not including the
 /// `HeaderData` information (which is parsed separately).
@@ -302,32 +229,110 @@ named!(pub packet<Packet>,
     )
 );
 
-#[test]
-fn parse_packet() {
-    let input = &[
-        0x00, 0x00, 0x01, 0xbd, 0x00, 0x10, 0x81, 0x80, 0x05, 0x21, 0x00, 0xab, 0xe9, 0xc1, 0x20,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
-    ][..];
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let expected = Packet {
-        header: Header {
-            original: true,
-            ..Header::default()
-        },
-        header_data: HeaderData {
-            flags: HeaderDataFlags {
-                pts_dts_flags: PtsDtsFlags::Pts,
-                ..HeaderDataFlags::default()
+    #[test]
+    fn parse_pts_dts_flags() {
+        assert_eq!(
+            pts_dts_flags((&[0b00][..], 6)),
+            IResult::Done((&[][..], 0), PtsDtsFlags::None)
+        );
+        assert_eq!(
+            pts_dts_flags((&[0b10][..], 6)),
+            IResult::Done((&[][..], 0), PtsDtsFlags::Pts)
+        );
+        assert_eq!(
+            pts_dts_flags((&[0b11][..], 6)),
+            IResult::Done((&[][..], 0), PtsDtsFlags::PtsDts)
+        );
+    }
+
+    #[test]
+    fn parse_pts_dts() {
+        assert_eq!(
+            pts_dts(&[][..], PtsDtsFlags::None),
+            IResult::Done(&[][..], None)
+        );
+        assert_eq!(
+            pts_dts(&[0x21, 0x00, 0xab, 0xe9, 0xc1][..], PtsDtsFlags::Pts),
+            IResult::Done(
+                &[][..],
+                Some(PtsDts {
+                    pts: Clock::base(2815200),
+                    dts: None,
+                })
+            )
+        );
+    }
+
+    #[test]
+    fn parse_header_data_flags() {
+        assert_eq!(
+            header_data_flags(&[0x80][..]),
+            IResult::Done(
+                &[][..],
+                HeaderDataFlags {
+                    pts_dts_flags: PtsDtsFlags::Pts,
+                    ..HeaderDataFlags::default()
+                }
+            )
+        );
+    }
+
+    #[test]
+    fn parse_header_data() {
+        assert_eq!(
+            header_data(&[0x00, 0x00][..]),
+            IResult::Done(&[][..], HeaderData::default())
+        );
+        assert_eq!(
+            header_data(&[0x80, 0x05, 0x21, 0x00, 0xab, 0xe9, 0xc1][..]),
+            IResult::Done(
+                &[][..],
+                HeaderData {
+                    flags: HeaderDataFlags {
+                        pts_dts_flags: PtsDtsFlags::Pts,
+                        ..HeaderDataFlags::default()
+                    },
+                    pts_dts: Some(PtsDts {
+                        pts: Clock::base(2815200),
+                        dts: None,
+                    }),
+                    ..HeaderData::default()
+                }
+            )
+        );
+    }
+
+    #[test]
+    fn parse_packet() {
+        let input = &[
+            0x00, 0x00, 0x01, 0xbd, 0x00, 0x10, 0x81, 0x80, 0x05, 0x21, 0x00, 0xab, 0xe9, 0xc1,
+            0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
+        ][..];
+
+        let expected = Packet {
+            header: Header {
+                original: true,
+                ..Header::default()
             },
-            pts_dts: Some(PtsDts {
-                pts: Clock::base(2815200),
-                dts: None,
-            }),
-            ..HeaderData::default()
-        },
-        substream_id: 0x20,
-        data: &[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    };
+            header_data: HeaderData {
+                flags: HeaderDataFlags {
+                    pts_dts_flags: PtsDtsFlags::Pts,
+                    ..HeaderDataFlags::default()
+                },
+                pts_dts: Some(PtsDts {
+                    pts: Clock::base(2815200),
+                    dts: None,
+                }),
+                ..HeaderData::default()
+            },
+            substream_id: 0x20,
+            data: &[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        };
 
-    assert_eq!(packet(input), IResult::Done(&[0xff][..], expected));
+        assert_eq!(packet(input), IResult::Done(&[0xff][..], expected));
+    }
 }

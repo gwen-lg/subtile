@@ -79,15 +79,20 @@ impl Index {
     }
 }
 
-#[test]
-fn parse_index() {
+#[cfg(test)]
+mod tests {
     use image::Rgb;
 
-    env_logger::init();
+    use crate::vobsub::Index;
 
-    let idx = Index::open("./fixtures/example.idx").unwrap();
+    #[test]
+    fn parse_index() {
+        env_logger::init();
 
-    //assert_eq!(idx.size(), Size { w: 1920, h: 1080 });
-    assert_eq!(idx.palette()[0], Rgb([0x00, 0x00, 0x00]));
-    assert_eq!(idx.palette()[15], Rgb([0x11, 0xbb, 0xbb]));
+        let idx = Index::open("./fixtures/example.idx").unwrap();
+
+        //assert_eq!(idx.size(), Size { w: 1920, h: 1080 });
+        assert_eq!(idx.palette()[0], Rgb([0x00, 0x00, 0x00]));
+        assert_eq!(idx.palette()[15], Rgb([0x11, 0xbb, 0xbb]));
+    }
 }

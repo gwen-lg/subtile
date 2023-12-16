@@ -10,7 +10,7 @@ use std::{cmp::Ordering, fmt};
 
 use super::img::{decompress, Size};
 use super::mpeg2::ps;
-use super::{idx, Palette};
+use super::Palette;
 use crate::{util::BytesFormatter, Error, Result};
 use image::{ImageBuffer, Rgba, RgbaImage};
 
@@ -28,14 +28,6 @@ named!(
     palette_entries<[u8; 4]>,
     bits!(count_fixed!(u8, take_bits!(u8, 4), 4))
 );
-
-#[test]
-fn parse_palette_entries() {
-    assert_eq!(
-        palette_entries(&[0x03, 0x10][..]),
-        IResult::Done(&[][..], [0x00, 0x03, 0x01, 0x00])
-    );
-}
 
 /// Location at which to display the subtitle.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -185,60 +177,6 @@ named!(
         })
     )
 );
-
-#[test]
-fn parse_control_sequence() {
-    let input_1 = &[
-        0x00, 0x00, 0x0f, 0x41, 0x01, 0x03, 0x03, 0x10, 0x04, 0xff, 0xf0, 0x05, 0x29, 0xb4, 0xe6,
-        0x3c, 0x54, 0x00, 0x06, 0x00, 0x04, 0x07, 0x7b, 0xff,
-    ][..];
-    let expected_1 = ControlSequence {
-        date: 0x0000,
-        next: 0x0f41,
-        commands: vec![
-            ControlCommand::StartDate,
-            ControlCommand::Palette([0x0, 0x3, 0x1, 0x0]),
-            ControlCommand::Alpha([0xf, 0xf, 0xf, 0x0]),
-            ControlCommand::Coordinates(Coordinates {
-                x1: 0x29b,
-                x2: 0x4e6,
-                y1: 0x3c5,
-                y2: 0x400,
-            }),
-            ControlCommand::RleOffsets([0x0004, 0x077b]),
-        ],
-    };
-    assert_eq!(
-        control_sequence(input_1),
-        IResult::Done(&[][..], expected_1)
-    );
-
-    let input_2 = &[0x00, 0x77, 0x0f, 0x41, 0x02, 0xff][..];
-    let expected_2 = ControlSequence {
-        date: 0x0077,
-        next: 0x0f41,
-        commands: vec![ControlCommand::StopDate],
-    };
-    assert_eq!(
-        control_sequence(input_2),
-        IResult::Done(&[][..], expected_2)
-    );
-
-    // An out of order example.
-    let input_3 = &[
-        0x00, 0x00, 0x0b, 0x30, 0x01, 0x00, // ...other commands would appear here...
-        0xff,
-    ][..];
-    let expected_3 = ControlSequence {
-        date: 0x0000,
-        next: 0x0b30,
-        commands: vec![ControlCommand::StartDate, ControlCommand::Force],
-    };
-    assert_eq!(
-        control_sequence(input_3),
-        IResult::Done(&[][..], expected_3)
-    );
-}
 
 /// A single subtitle.
 #[derive(Clone, PartialEq)]
@@ -644,67 +582,135 @@ pub fn subtitles(input: &[u8]) -> Subtitles {
     }
 }
 
-#[test]
-fn parse_subtitles() {
-    //use env_logger;
-    use std::fs;
-    use std::io::prelude::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::vobsub::idx;
 
-    //let _ = env_logger::init();
+    #[test]
+    fn parse_palette_entries() {
+        assert_eq!(
+            palette_entries(&[0x03, 0x10][..]),
+            IResult::Done(&[][..], [0x00, 0x03, 0x01, 0x00])
+        );
+    }
 
-    let mut f = fs::File::open("./fixtures/example.sub").unwrap();
-    let mut buffer = vec![];
-    f.read_to_end(&mut buffer).unwrap();
-    let mut subs = subtitles(&buffer);
-    let sub1 = subs.next().expect("missing sub 1").unwrap();
-    assert!(sub1.start_time - 49.4 < 0.1);
-    assert!(sub1.end_time.unwrap() - 50.9 < 0.1);
-    assert!(!sub1.force);
-    assert_eq!(
-        sub1.coordinates,
-        Coordinates {
-            x1: 750,
-            y1: 916,
-            x2: 1172,
-            y2: 966
-        }
-    );
-    assert_eq!(sub1.palette, [0, 3, 1, 0]);
-    assert_eq!(sub1.alpha, [15, 15, 15, 0]);
-    subs.next().expect("missing sub 2").unwrap();
-    assert!(subs.next().is_none());
-}
+    #[test]
+    fn parse_control_sequence() {
+        let input_1 = &[
+            0x00, 0x00, 0x0f, 0x41, 0x01, 0x03, 0x03, 0x10, 0x04, 0xff, 0xf0, 0x05, 0x29, 0xb4,
+            0xe6, 0x3c, 0x54, 0x00, 0x06, 0x00, 0x04, 0x07, 0x7b, 0xff,
+        ][..];
+        let expected_1 = ControlSequence {
+            date: 0x0000,
+            next: 0x0f41,
+            commands: vec![
+                ControlCommand::StartDate,
+                ControlCommand::Palette([0x0, 0x3, 0x1, 0x0]),
+                ControlCommand::Alpha([0xf, 0xf, 0xf, 0x0]),
+                ControlCommand::Coordinates(Coordinates {
+                    x1: 0x29b,
+                    x2: 0x4e6,
+                    y1: 0x3c5,
+                    y2: 0x400,
+                }),
+                ControlCommand::RleOffsets([0x0004, 0x077b]),
+            ],
+        };
+        assert_eq!(
+            control_sequence(input_1),
+            IResult::Done(&[][..], expected_1)
+        );
 
-#[test]
-fn parse_subtitles_from_subtitle_edit() {
-    //use env_logger;
-    use idx::Index;
-    //let _ = env_logger::init();
-    let idx = Index::open("./fixtures/tiny.idx").unwrap();
-    let mut subs = idx.subtitles();
-    subs.next().expect("missing sub").unwrap();
-    assert!(subs.next().is_none());
-}
+        let input_2 = &[0x00, 0x77, 0x0f, 0x41, 0x02, 0xff][..];
+        let expected_2 = ControlSequence {
+            date: 0x0077,
+            next: 0x0f41,
+            commands: vec![ControlCommand::StopDate],
+        };
+        assert_eq!(
+            control_sequence(input_2),
+            IResult::Done(&[][..], expected_2)
+        );
 
-#[test]
-fn parse_fuzz_corpus_seeds() {
-    //use env_logger;
-    use idx::Index;
-    //let _ = env_logger::init();
+        // An out of order example.
+        let input_3 = &[
+            0x00, 0x00, 0x0b, 0x30, 0x01, 0x00, // ...other commands would appear here...
+            0xff,
+        ][..];
+        let expected_3 = ControlSequence {
+            date: 0x0000,
+            next: 0x0b30,
+            commands: vec![ControlCommand::StartDate, ControlCommand::Force],
+        };
+        assert_eq!(
+            control_sequence(input_3),
+            IResult::Done(&[][..], expected_3)
+        );
+    }
 
-    // Make sure these two fuzz corpus inputs still work, and that they
-    // return the same subtitle data.
-    let tiny = Index::open("./fixtures/tiny.idx")
-        .unwrap()
-        .subtitles()
-        .next()
-        .unwrap()
-        .unwrap();
-    let split = Index::open("./fixtures/tiny-split.idx")
-        .unwrap()
-        .subtitles()
-        .next()
-        .unwrap()
-        .unwrap();
-    assert_eq!(tiny, split);
+    #[test]
+    fn parse_subtitles() {
+        //use env_logger;
+        use std::fs;
+        use std::io::prelude::*;
+
+        //let _ = env_logger::init();
+
+        let mut f = fs::File::open("./fixtures/example.sub").unwrap();
+        let mut buffer = vec![];
+        f.read_to_end(&mut buffer).unwrap();
+        let mut subs = subtitles(&buffer);
+        let sub1 = subs.next().expect("missing sub 1").unwrap();
+        assert!(sub1.start_time - 49.4 < 0.1);
+        assert!(sub1.end_time.unwrap() - 50.9 < 0.1);
+        assert!(!sub1.force);
+        assert_eq!(
+            sub1.coordinates,
+            Coordinates {
+                x1: 750,
+                y1: 916,
+                x2: 1172,
+                y2: 966
+            }
+        );
+        assert_eq!(sub1.palette, [0, 3, 1, 0]);
+        assert_eq!(sub1.alpha, [15, 15, 15, 0]);
+        subs.next().expect("missing sub 2").unwrap();
+        assert!(subs.next().is_none());
+    }
+
+    #[test]
+    fn parse_subtitles_from_subtitle_edit() {
+        //use env_logger;
+        use idx::Index;
+        //let _ = env_logger::init();
+        let idx = Index::open("./fixtures/tiny.idx").unwrap();
+        let mut subs = idx.subtitles();
+        subs.next().expect("missing sub").unwrap();
+        assert!(subs.next().is_none());
+    }
+
+    #[test]
+    fn parse_fuzz_corpus_seeds() {
+        //use env_logger;
+        use idx::Index;
+        //let _ = env_logger::init();
+
+        // Make sure these two fuzz corpus inputs still work, and that they
+        // return the same subtitle data.
+        let tiny = Index::open("./fixtures/tiny.idx")
+            .unwrap()
+            .subtitles()
+            .next()
+            .unwrap()
+            .unwrap();
+        let split = Index::open("./fixtures/tiny-split.idx")
+            .unwrap()
+            .subtitles()
+            .next()
+            .unwrap()
+            .unwrap();
+        assert_eq!(tiny, split);
+    }
 }

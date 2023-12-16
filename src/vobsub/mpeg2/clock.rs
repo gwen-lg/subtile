@@ -76,21 +76,26 @@ named!(pub clock_and_ext<(&[u8], usize), Clock>,
     )
 );
 
-#[test]
-fn parse_clock() {
-    use nom::IResult;
-    assert_eq!(
-        clock((&[0x44, 0x02, 0xc4, 0x82, 0x04][..], 2)),
-        IResult::Done(
-            (&[0x04][..], 6),
-            Clock::base(0b0_0000_0000_0010_1100_0001_0000_0100_0000)
-        )
-    );
-    assert_eq!(
-        clock_and_ext((&[0x44, 0x02, 0xc4, 0x82, 0x04, 0xa9][..], 2)),
-        IResult::Done(
-            (&[][..], 0),
-            Clock::base(0b0_0000_0000_0010_1100_0001_0000_0100_0000).with_ext(0b0_0101_0100)
-        )
-    );
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_clock() {
+        use nom::IResult;
+        assert_eq!(
+            clock((&[0x44, 0x02, 0xc4, 0x82, 0x04][..], 2)),
+            IResult::Done(
+                (&[0x04][..], 6),
+                Clock::base(0b0_0000_0000_0010_1100_0001_0000_0100_0000)
+            )
+        );
+        assert_eq!(
+            clock_and_ext((&[0x44, 0x02, 0xc4, 0x82, 0x04, 0xa9][..], 2)),
+            IResult::Done(
+                (&[][..], 0),
+                Clock::base(0b0_0000_0000_0010_1100_0001_0000_0100_0000).with_ext(0b0_0101_0100)
+            )
+        );
+    }
 }
