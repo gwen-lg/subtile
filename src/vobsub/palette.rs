@@ -1,38 +1,40 @@
 use failure::format_err;
 use image::Rgb;
+use nom::{
+    bytes::complete::{tag, take_while_m_n},
+    combinator::map_res,
+    multi::separated_list0,
+    sequence::tuple,
+    IResult,
+};
 
 /// Parse a single hexadecimal digit.
-named!(
-    hex_digit<u8>,
-    map!(one_of!(b"0123456789abcdefABCDEF"), |c: char| -> u8 {
-        cast::u8(c.to_digit(16).unwrap()).unwrap()
-    })
-);
+fn from_hex(input: &[u8]) -> std::result::Result<u8, std::num::ParseIntError> {
+    let input = std::str::from_utf8(input).unwrap();
+    u8::from_str_radix(input, 16)
+}
 
 /// Parse a single byte hexadecimal byte.
-named!(
-    hex_u8<u8>,
-    do_parse!(
-        h1: call!(hex_digit) >>
-        h2: call!(hex_digit) >>
-        (h1 << 4 | h2)
-    )
-);
+fn hex_primary(input: &[u8]) -> IResult<&[u8], u8> {
+    map_res(
+        take_while_m_n(2, 2, |c: u8| c.is_ascii_hexdigit()),
+        from_hex,
+    )(input)
+}
 
 /// Parse a 3-byte hexadecimal RGB color.
-named!(
-    rgb<Rgb<u8>>,
-    map!(count!(u8, call!(hex_u8), 3), |rgb| { Rgb(rgb) })
-);
+fn hex_rgb(input: &[u8]) -> IResult<&[u8], Rgb<u8>> {
+    let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
+
+    Ok((input, Rgb([red, green, blue])))
+}
 
 /// The 16-color pallette used by the subtitles.
 pub type Palette = [Rgb<u8>; 16];
 
-named!(
-    pub palette<Palette>,
-    map_res!(separated_list!(tag!(b", "), call!(rgb)), |vec: Vec<
-        Rgb<u8>,
-    >| {
+/// Parse a text as Palette
+pub fn palette(input: &[u8]) -> IResult<&[u8], Palette> {
+    let res = map_res(separated_list0(tag(b", "), hex_rgb), |vec: Vec<Rgb<u8>>| {
         if vec.len() != 16 {
             return Err(format_err!("Palettes must have 16 entries"));
         }
@@ -41,8 +43,9 @@ named!(
         let mut result = [Rgb([0, 0, 0]); 16];
         <[Rgb<u8>; 16] as AsMut<_>>::as_mut(&mut result).clone_from_slice(&vec[0..16]);
         Ok(result)
-    })
-);
+    })(input);
+    res
+}
 
 #[cfg(test)]
 mod tests {
@@ -54,7 +57,7 @@ mod tests {
     fn parse_rgb() {
         use nom::IResult;
         assert_eq!(
-            rgb(&b"1234ab"[..]),
+            hex_rgb(&b"1234ab"[..]),
             IResult::Ok((&b""[..], Rgb::<u8>([0x12, 0x34, 0xab])))
         );
     }

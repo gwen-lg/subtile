@@ -4,7 +4,15 @@
 
 use failure::format_err;
 use log::{debug, trace, warn};
-use nom::IResult;
+use nom::{
+    bits::{
+        bits,
+        complete::{tag as tag_bits, take as take_bits},
+    },
+    bytes::complete::tag as tag_bytes,
+    sequence::Tuple,
+    IResult,
+};
 use std::fmt;
 
 use super::clock::{clock_and_ext, Clock};
@@ -34,38 +42,45 @@ impl fmt::Display for Header {
 }
 
 /// Parse a Program Stream header.
-named!(pub header<Header>,
-    do_parse!(
-        // Sync bytes.
-        tag!(&[0x00, 0x00, 0x01, 0xba]) >>
-        // 10-byte header.
-        header: bits!(
-            do_parse!(
-                // MPEG-2 version tag.
-                tag_bits!(2u8, 0b01) >>
-                // System Clock Reference.
-                scr: call!(clock_and_ext) >>
-                // Bit rate.
-                bit_rate: take_bits!(22u32) >>
-                // Marker bits.
-                tag_bits!(2u8, 0b11) >>
-                // Reserved.
-                take_bits!(5u8) >>
-                // Number of bytes of stuffing.
-                stuffing_length: take_bits!(3usize) >>
-                // Stuffing bytes.  We just want to ignore these, but use a
-                // large enough type to prevent overflow panics when
-                // fuzzing.
-                take_bits!(u64, stuffing_length * 8) >>
-                (Header {
-                    scr,
-                    bit_rate,
-                })
-            )
-        ) >>
-        (header)
-    )
-);
+pub fn header(input: &[u8]) -> IResult<&[u8], Header> {
+    // Sync bytes.
+    let tag1 = tag_bytes(&[0x00, 0x00, 0x01, 0xba]);
+
+    // 10-byte header.
+    let header_parse = bits(|input| {
+        // MPEG-2 version tag.
+        let tag_mpeg2 = tag_bits(0b01, 2u8);
+        // Bit rate
+        let bit_rate = take_bits(22u32);
+        // Marker bits.
+        let marker_bits = tag_bits(0b11, 2u8);
+        // Reserved.
+        let reserved = take_bits::<_, u8, u8, nom::error::Error<(&[u8], usize)>>(5u8);
+        // Number of bytes of stuffing.
+        let stuffing_length =
+            take_bits::<_, usize, usize, nom::error::Error<(&[u8], usize)>>(3usize);
+
+        // clock_and_ext: System Clock Reference.
+        let (input, (_, scr, bit_rate, _, _, stuffing_length)) = (
+            tag_mpeg2,
+            clock_and_ext,
+            bit_rate,
+            marker_bits,
+            reserved,
+            stuffing_length,
+        )
+            .parse(input)?;
+
+        // Stuffing bytes.  We just want to ignore these, but use a
+        // large enough type to prevent overflow panics when
+        // fuzzing.
+        let (input, _) = take_bits::<_, u64, _, _>(stuffing_length * 8)(input)?;
+        Ok((input, Header { scr, bit_rate }))
+    });
+
+    let (input, (_, header)) = (tag1, header_parse).parse(input)?;
+    Ok((input, header))
+}
 
 /// A [Packetized Elementary Stream][pes] packet with a Program Stream
 /// header.
@@ -78,16 +93,16 @@ pub struct PesPacket<'a> {
 }
 
 /// Parse a Program Stream packet and the following PES packet.
-named!(pub pes_packet<PesPacket>,
-    do_parse!(
-        ps_header: call!(header) >>
-        pes_packet: call!(pes::packet) >>
-        (PesPacket {
+pub fn pes_packet(input: &[u8]) -> IResult<&[u8], PesPacket> {
+    let (input, (ps_header, pes_packet)) = (header, pes::packet).parse(input)?;
+    Ok((
+        input,
+        PesPacket {
             ps_header,
             pes_packet,
-        })
-    )
-);
+        },
+    ))
+}
 
 /// An iterator over all the PES packets in an MPEG-2 Program Stream.
 pub struct PesPackets<'a> {

@@ -7,7 +7,17 @@
 use cast;
 use failure::format_err;
 use log::{trace, warn};
-use nom::{number::complete::be_u16, IResult};
+use nom::{
+    bits::{bits, complete::take as take_bits},
+    branch::alt,
+    bytes,
+    bytes::complete::{tag as tag_bytes, take_until},
+    combinator::{map, value},
+    multi::{count, many_till},
+    number::complete::be_u16,
+    sequence::{preceded, Tuple},
+    IResult,
+};
 use std::{cmp::Ordering, fmt};
 
 use super::img::{decompress, Size};
@@ -26,7 +36,16 @@ const DEFAULT_SUBTITLE_SPACING: f64 = 0.001;
 const DEFAULT_SUBTITLE_LENGTH: f64 = 5.0;
 
 /// Parse four 4-bit palette entries.
-named!(palette_entries<[u8; 4]>, bits!(count!(take_bits!(4u8), 4)));
+fn palette_entries(input: &[u8]) -> IResult<&[u8], [u8; 4]> {
+    let (input, vec) = bits(count(
+        take_bits::<_, _, _, nom::error::Error<(&[u8], usize)>>(4usize),
+        4,
+    ))(input)?;
+
+    let mut result = [0; 4];
+    <[u8; 4] as AsMut<_>>::as_mut(&mut result).clone_from_slice(&vec[0..4]);
+    Ok((input, result))
+}
 
 /// Location at which to display the subtitle.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -68,28 +87,28 @@ impl Coordinates {
 }
 
 /// Parse a 12-bit coordinate value.
-named!(coordinate<(&[u8], usize), u16>, take_bits!(12u16));
+fn coordinate(input: (&[u8], usize)) -> IResult<(&[u8], usize), u16> {
+    take_bits::<_, _, _, _>(12u8)(input)
+}
 
 /// Parse four 12-bit coordinate values as a rectangle (with right and
 /// bottom coordinates inclusive).
-named!(
-    coordinates<Coordinates>,
-    bits!(do_parse!(
-        x1: call!(coordinate) >>
-        x2: call!(coordinate) >>
-        y1: call!(coordinate) >>
-        y2: call!(coordinate) >>
-        (Coordinates {
-            x1,
-            y1,
-            x2,
-            y2,
-        })
-    ))
-);
+fn coordinates(input: &[u8]) -> IResult<&[u8], Coordinates> {
+    bits(|input| {
+        let (input, (x1, x2, y1, y2)) =
+            (coordinate, coordinate, coordinate, coordinate).parse(input)?;
+        Ok((input, Coordinates { x1, y1, x2, y2 }))
+    })(input)
+}
 
 /// Parse a pair of 16-bit RLE offsets.
-named!(rle_offsets<[u16; 2]>, bits!(count!(take_bits!(16u16), 2)));
+fn rle_offsets(input: &[u8]) -> IResult<&[u8], [u16; 2]> {
+    let (input, vec) = bits(count(
+        take_bits::<_, _, _, nom::error::Error<(&[u8], usize)>>(16u16),
+        2,
+    ))(input)?;
+    Ok((input, [vec[0], vec[1]]))
+}
 
 /// Individual commands which may appear in a control sequence.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -118,30 +137,39 @@ enum ControlCommand<'a> {
 }
 
 /// Parse a single command in a control sequence.
-named!(
-    control_command<ControlCommand>,
-    alt!(
-        value!(ControlCommand::Force, tag!(&[0x00])) |
-        value!(ControlCommand::StartDate, tag!(&[0x01])) |
-        value!(ControlCommand::StopDate, tag!(&[0x02])) |
-        map!(preceded!(tag!(&[0x03]), call!(palette_entries)),
-             ControlCommand::Palette) |
-        map!(preceded!(tag!(&[0x04]), call!(palette_entries)),
-             ControlCommand::Alpha) |
-        map!(preceded!(tag!(&[0x05]), call!(coordinates)),
-             ControlCommand::Coordinates) |
-        map!(preceded!(tag!(&[0x06]), call!(rle_offsets)),
-             ControlCommand::RleOffsets) |
+fn control_command(input: &[u8]) -> IResult<&[u8], ControlCommand> {
+    alt((
+        value(ControlCommand::Force, tag_bytes(&[0x00])),
+        value(ControlCommand::StartDate, tag_bytes(&[0x01])),
+        value(ControlCommand::StopDate, tag_bytes(&[0x02])),
+        map(
+            preceded(tag_bytes(&[0x03]), palette_entries),
+            ControlCommand::Palette,
+        ),
+        map(
+            preceded(tag_bytes(&[0x04]), palette_entries),
+            ControlCommand::Alpha,
+        ),
+        map(
+            preceded(tag_bytes(&[0x05]), coordinates),
+            ControlCommand::Coordinates,
+        ),
+        map(
+            preceded(tag_bytes(&[0x06]), rle_offsets),
+            ControlCommand::RleOffsets,
+        ),
         // We only capture this so we have something to log.  Note that we
         // may not find the _true_ `ControlCommand::End` in this case, but
         // that doesn't matter, because we'll use the `next` field of
         // `ControlSequence` to find the next `ControlSequence`.
-        map!(take_until!(&[0xff][..]), ControlCommand::Unsupported)
-    )
-);
+        map(take_until(&[0xff][..]), ControlCommand::Unsupported),
+    ))(input)
+}
 
 /// The end of a control sequence.
-named!(control_command_end, tag!(&[0xff]));
+fn control_command_end(input: &[u8]) -> IResult<&[u8], &[u8]> {
+    bytes::complete::tag(&[0xff])(input)
+}
 
 /// The control packet for a subtitle.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -159,20 +187,22 @@ struct ControlSequence<'a> {
 }
 
 /// Parse a single control sequence.
-named!(
-    control_sequence<ControlSequence>,
-    do_parse!(
-        date: call!(be_u16) >>
-        next: call!(be_u16) >>
-        commands: many_till!(call!(control_command),
-                             call!(control_command_end)) >>
-        (ControlSequence {
+fn control_sequence(input: &[u8]) -> IResult<&[u8], ControlSequence> {
+    let (input, (date, next, commands)) = (
+        be_u16,
+        be_u16,
+        many_till(control_command, control_command_end),
+    )
+        .parse(input)?;
+    Ok((
+        input,
+        ControlSequence {
             date,
             next,
             commands: commands.0,
-        })
-    )
-);
+        },
+    ))
+}
 
 /// A single subtitle.
 #[derive(Clone, PartialEq)]

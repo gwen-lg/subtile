@@ -4,9 +4,16 @@
 //! in a `*.sub` file.
 
 use nom::{
-    alt, bits, call, do_parse, length_value, named,
+    bits,
+    bits::complete::{tag as tag_bits, take},
+    branch::alt,
+    bytes::complete::tag as tag_bytes,
+    combinator::{map, rest, value},
+    multi::length_value,
     number::complete::{be_u16, be_u8},
-    rest, tag, value, IResult,
+    //do_parse, length_value, named, rest,
+    sequence::Tuple,
+    IResult,
 };
 use std::fmt;
 
@@ -31,11 +38,13 @@ pub enum PtsDtsFlags {
 }
 
 /// Parse PTS & DTS flags in a PES packet header.  Consumes two bits.
-named!(pts_dts_flags<(&[u8], usize), PtsDtsFlags>,
-   alt!(value!(PtsDtsFlags::None,   tag_bits!(2u8, 0b00)) |
-        value!(PtsDtsFlags::Pts,    tag_bits!(2u8, 0b10)) |
-        value!(PtsDtsFlags::PtsDts, tag_bits!(2u8, 0b11)))
-);
+fn pts_dts_flags(input: (&[u8], usize)) -> IResult<(&[u8], usize), PtsDtsFlags> {
+    alt((
+        value(PtsDtsFlags::None, tag_bits(0b00, 2u8)),
+        value(PtsDtsFlags::Pts, tag_bits(0b10, 2u8)),
+        value(PtsDtsFlags::PtsDts, tag_bits(0b11, 2u8)),
+    ))(input)
+}
 
 /// Presentation and Decode Time Stamps, if available.
 #[derive(Debug, PartialEq, Eq)]
@@ -47,26 +56,29 @@ pub struct PtsDts {
 }
 
 /// Helper for `pts_dts`.  Parses the PTS-only case.
-named!(
-    pts_only<PtsDts>,
-    bits!(do_parse!(
-        tag_bits!(4u8, 0b0010) >>
-        pts: call!(clock) >>
-        (PtsDts { pts, dts: None })
-    ))
-);
+fn pts_only(input: &[u8]) -> IResult<&[u8], PtsDts> {
+    bits(|input| {
+        let tag_parse = tag_bits(0b0010, 4u8);
+        let (input, (_, pts)) = (tag_parse, clock).parse(input)?;
+        Ok((input, PtsDts { pts, dts: None }))
+    })(input)
+}
 
 /// Helper for `pts_dts`.  Parses the PTS and DTS case.
-named!(
-    pts_and_dts<PtsDts>,
-    bits!(do_parse!(
-        tag_bits!(4u8, 0b0011) >>
-        pts: call!(clock) >>
-        tag_bits!(4u8, 0b0001) >>
-        dts: call!(clock) >>
-        (PtsDts { pts, dts: Some(dts) })
-    ))
-);
+fn pts_and_dts(input: &[u8]) -> IResult<&[u8], PtsDts> {
+    bits(|input| {
+        let parse_tag = tag_bits(0b0010, 4u8);
+        let (input, (_, pts, _, dts)): ((&[u8], usize), (_, _, _, _)) =
+            (&parse_tag, clock, &parse_tag, clock).parse(input)?;
+        Ok((
+            input,
+            PtsDts {
+                pts,
+                dts: Some(dts),
+            },
+        ))
+    })(input)
+}
 
 /// Parse a `PtsDts` value in the format specified by `flags`.
 fn pts_dts(i: &[u8], flags: PtsDtsFlags) -> IResult<&[u8], Option<PtsDts>> {
@@ -90,31 +102,48 @@ pub struct HeaderDataFlags {
 }
 
 /// Deserialize a single Boolean flag bit.
-named!(bool_flag<(&[u8], usize), bool>,
-    map!(take_bits!(1u8), |b| b == 1)
-);
+fn bool_flag(input: (&[u8], usize)) -> IResult<(&[u8], usize), bool> {
+    map(|input| bits::complete::take(1u8)(input), |b: u8| b == 1)(input)
+}
 
-named!(
-    header_data_flags<HeaderDataFlags>,
-    bits!(do_parse!(
-        pts_dts_flags: call!(pts_dts_flags) >>
-        escr_flag: call!(bool_flag) >>
-        es_rate_flag: call!(bool_flag) >>
-        dsm_trick_mode_flag: call!(bool_flag) >>
-        additional_copy_info_flag: call!(bool_flag) >>
-        crc_flag: call!(bool_flag) >>
-        extension_flag: call!(bool_flag) >>
-        (HeaderDataFlags {
+/// Deserialize HeaderDataFlags
+fn header_data_flags(input: &[u8]) -> IResult<&[u8], HeaderDataFlags> {
+    bits(|input| {
+        let (
+            input,
+            (
+                pts_dts_flags,
+                escr_flag,
+                es_rate_flag,
+                dsm_trick_mode_flag,
+                additional_copy_info_flag,
+                crc_flag,
+                extension_flag,
+            ),
+        ) = (
             pts_dts_flags,
-            escr_flag,
-            es_rate_flag,
-            dsm_trick_mode_flag,
-            additional_copy_info_flag,
-            crc_flag,
-            extension_flag,
-        })
-    ))
-);
+            bool_flag,
+            bool_flag,
+            bool_flag,
+            bool_flag,
+            bool_flag,
+            bool_flag,
+        )
+            .parse(input)?;
+        Ok((
+            input,
+            HeaderDataFlags {
+                pts_dts_flags,
+                escr_flag,
+                es_rate_flag,
+                dsm_trick_mode_flag,
+                additional_copy_info_flag,
+                crc_flag,
+                extension_flag,
+            },
+        ))
+    })(input)
+}
 
 /// Header data fields.
 #[non_exhaustive]
@@ -124,33 +153,18 @@ pub struct HeaderData {
     pub pts_dts: Option<PtsDts>,
 }
 
-/// Parse variable length header data, ignoring any fields we don't care
-/// about.  We expect to be called by `length_value!` so any extra bytes
-/// will be discarded.
-fn header_data_fields(i: &[u8], flags: HeaderDataFlags) -> IResult<&[u8], HeaderData> {
-    do_parse!(i,
-        pts_dts: apply!(pts_dts, flags.pts_dts_flags) >>
-        (HeaderData {
-            flags,
-            pts_dts,
-        })
-    )
-}
-
 /// Parse PES header data, including the predecing flags and length bytes.
-named!(
-    header_data<HeaderData>,
-    do_parse!(
-        // Grab the flags from our flag byte.
-        flags: call!(header_data_flags) >>
-        // Grab a single length byte, read that many bytes, and recursively
-        // call `header_data_fields` to do the actual parse.  This ensures
-        // that if `header_data_fields` doesn't parse all the header data,
-        // we discard the rest before continuing.
-        data: length_value!(call!(be_u8), apply!(header_data_fields, flags)) >>
-        (data)
-    )
-);
+fn header_data(input: &[u8]) -> IResult<&[u8], HeaderData> {
+    // Grab the flags from our flag byte with header_data_flags.
+    let (input, flags) = header_data_flags(input)?;
+
+    // Grab a single length byte, read that many bytes, and recursively
+    // call `header_data_fields` to do the actual parse.  This ensures
+    // that if `header_data_fields` doesn't parse all the header data,
+    // we discard the rest before continuing.
+    let (input, pts_dts) = length_value(be_u8, |input| pts_dts(input, flags.pts_dts_flags))(input)?;
+    Ok((input, HeaderData { flags, pts_dts }))
+}
 
 /// A [Packetized Elementary Stream][pes] header, not including the
 /// `HeaderData` information (which is parsed separately).
@@ -166,24 +180,34 @@ pub struct Header {
 }
 
 /// Parse the first PES header byte after the length.
-named!(
-    header<Header>,
-    bits!(do_parse!(
-        tag_bits!(2u8, 0b10) >>
-        scrambling_control: take_bits!(2u8) >>
-        priority: call!(bool_flag) >>
-        data_alignment_indicator: call!(bool_flag) >>
-        copyright: call!(bool_flag) >>
-        original: call!(bool_flag) >>
-        (Header {
-            scrambling_control,
-            priority,
-            data_alignment_indicator,
-            copyright,
-            original,
-        })
-    ))
-);
+fn header(input: &[u8]) -> IResult<&[u8], Header> {
+    bits(|input| {
+        let tag_parse = tag_bits(0b10, 2u8);
+        let take_scrambling = take(2u8);
+        let (
+            input,
+            (_, scrambling_control, priority, data_alignment_indicator, copyright, original),
+        ) = (
+            tag_parse,
+            take_scrambling,
+            bool_flag,
+            bool_flag,
+            bool_flag,
+            bool_flag,
+        )
+            .parse(input)?;
+        Ok((
+            input,
+            Header {
+                scrambling_control,
+                priority,
+                data_alignment_indicator,
+                copyright,
+                original,
+            },
+        ))
+    })(input)
+}
 
 /// A [Packetized Elementary Stream][pes] packet.
 ///
@@ -207,29 +231,27 @@ impl<'a> fmt::Debug for Packet<'a> {
     }
 }
 
-named!(
-    packet_helper<Packet>,
-    do_parse!(
-        header: call!(header) >>
-        header_data: call!(header_data) >>
-        substream_id: call!(be_u8) >>
-        data: call!(rest) >>
-        (Packet {
+fn packet_helper(input: &[u8]) -> IResult<&[u8], Packet> {
+    let (input, (header, header_data, substream_id, data)) =
+        (header, header_data, be_u8, rest).parse(input)?;
+    Ok((
+        input,
+        Packet {
             header,
             header_data,
             substream_id,
-            data
-        })
-    )
-);
+            data,
+        },
+    ))
+}
 
-named!(pub packet<Packet>,
-    do_parse!(
-        tag!(&[0x00, 0x00, 0x01, 0xbd]) >>
-        packet: length_value!(call!(be_u16), call!(packet_helper)) >>
-        (packet)
-    )
-);
+pub fn packet(input: &[u8]) -> IResult<&[u8], Packet> {
+    let packet_tag = tag_bytes(&[0x00, 0x00, 0x01, 0xbd]);
+    let packet_data = length_value(be_u16, packet_helper);
+    let (input, (_, packet)) = (packet_tag, packet_data).parse(input)?;
+
+    Ok((input, packet))
+}
 
 #[cfg(test)]
 mod tests {
@@ -264,8 +286,8 @@ mod tests {
                 Some(PtsDts {
                     pts: Clock::base(2815200),
                     dts: None,
-                }))
-            )
+                })
+            ))
         );
     }
 

@@ -3,7 +3,13 @@
 use cast;
 use failure::format_err;
 use log::trace;
-use nom::IResult;
+use nom::{
+    bits::complete::{tag as tag_bits, take as take_bits},
+    branch::alt,
+    combinator::value,
+    sequence::{preceded, Tuple},
+    IResult,
+};
 use safemem::write_bytes;
 
 use crate::{util::BytesFormatter, Result};
@@ -28,29 +34,26 @@ struct Rle {
 }
 
 /// Parse the count for a `Rle`.
-named!(count<(&[u8], usize), u16>,
-    alt!(
-        // Fill to end of line.
-        value!(0, tag_bits!(14u16, 0)) |
-        // Count for 4-nibble RLE.
-        preceded!(tag_bits!(6u8, 0), take_bits!(8u16)) |
-        // Count for 3-nibble RLE.
-        preceded!(tag_bits!(4u8, 0), take_bits!(6u16)) |
-        // Count for 2-nibble RLE.
-        preceded!(tag_bits!(2u8, 0), take_bits!(4u16)) |
-        // Count for 1-nibble RLE.
-        take_bits!(2u16)
-    )
-);
+fn count(input: (&[u8], usize)) -> IResult<(&[u8], usize), u16> {
+    // Fill to end of line.
+    let end_of_line = value(0, tag_bits(0, 14u16));
+    // Count for 4-nibble RLE.
+    let count4 = preceded(tag_bits(0, 6u8), take_bits(8u16));
+    // Count for 3-nibble RLE.
+    let count3 = preceded(tag_bits(0, 4u8), take_bits(6u16));
+    // Count for 2-nibble RLE.
+    let count2 = preceded(tag_bits(0, 2u8), take_bits(4u16));
+    // Count for 1-nibble RLE.
+    let count1 = take_bits(2u16);
+    alt((end_of_line, count4, count3, count2, count1))(input)
+}
 
 /// Parse an `Rle`.
-named!(rle<(&[u8], usize), Rle>,
-    do_parse!(
-        cnt: call!(count) >>
-        val: take_bits!(2u8) >>
-        (Rle { cnt, val })
-    )
-);
+fn rle(input: (&[u8], usize)) -> IResult<(&[u8], usize), Rle> {
+    let take_val = take_bits(2u8);
+    let (input, (cnt, val)) = (count, take_val).parse(input)?;
+    Ok((input, Rle { cnt, val }))
+}
 
 /// Decompress the scan-line `input` into `output`, returning the number of
 /// input bytes consumed.

@@ -1,6 +1,10 @@
 use std::fmt;
 
-use nom::{do_parse, named, tag_bits, take_bits};
+use nom::{
+    bits::complete::{tag, take},
+    sequence::Tuple,
+    IResult,
+};
 
 /// This represents the 90kHz, 33-bit [System Time Clock][STC] (STC) and
 /// the 9-bit STC extension value, which represents 1/300th of a tick.
@@ -46,35 +50,26 @@ impl fmt::Display for Clock {
 }
 
 /// Parse a 33-bit `Clock` value with 3 marker bits, consuming 36 bits.
-named!(pub clock<(&[u8], usize), Clock>,
-    do_parse!(
-        // Bits 32..30.
-        hi: take_bits!(3u64) >>
-        // Marker bit.
-        tag_bits!(1u8, 0b1) >>
-        // Bits 29..15.
-        mid: take_bits!(15u64) >>
-        // Marker bit.
-        tag_bits!(1u8, 0b1) >>
-        // Bits 14..0.
-        lo: take_bits!(15u64) >>
-        // Marker bit.
-        tag_bits!(1u8, 0b1) >>
-        (Clock::base(hi << 30 | mid << 15 | lo))
-    )
-);
+pub fn clock(i: (&[u8], usize)) -> IResult<(&[u8], usize), Clock> {
+    let marker = tag(0b1, 1u8);
+    let hi_p = take(3u64);
+    let mid_p = take(15u64);
+    let lo_p = take(15u64);
+
+    let (input, (hi, _, mid, _, lo, _)): ((&[u8], usize), (u64, _, u64, _, u64, _)) =
+        (hi_p, &marker, mid_p, &marker, lo_p, &marker).parse(i)?;
+    let clock = hi << 30 | mid << 15 | lo;
+    Ok((input, Clock::base(clock)))
+}
 
 /// Parse a 33-bit `Clock` value plus a 9-bit extension and 4 marker bits,
 /// consuming 46 bits.
-named!(pub clock_and_ext<(&[u8], usize), Clock>,
-    do_parse!(
-        clock: call!(clock) >>
-        ext: take_bits!(9u16) >>
-        // Marker bit.
-        tag_bits!(1u8, 0b1) >>
-        (clock.with_ext(ext))
-    )
-);
+pub fn clock_and_ext(input: (&[u8], usize)) -> IResult<(&[u8], usize), Clock> {
+    let ext_bits = take(9u16);
+    let clock_tag = tag(0b1, 1u8);
+    let (input, (clock, ext, _)) = (clock, ext_bits, clock_tag).parse(input)?;
+    Ok((input, clock.with_ext(ext)))
+}
 
 #[cfg(test)]
 mod tests {
