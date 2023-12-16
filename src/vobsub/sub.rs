@@ -6,7 +6,7 @@
 
 use cast;
 use nom::{be_u16, IResult};
-use std::fmt;
+use std::{cmp::Ordering, fmt};
 
 use super::idx;
 use super::img::{decompress, Size};
@@ -426,13 +426,17 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
                 // Figure out where to look for the next control sequence,
                 // if any.
                 let next_control_offset = cast::usize(control.next);
-                if next_control_offset == control_offset {
-                    // This points back at us, so we're the last packet.
-                    break;
-                } else if next_control_offset < control_offset {
-                    return Err(format_err!("control offset went backwards"));
-                } else {
-                    control_offset = next_control_offset;
+                match control_offset.cmp(&next_control_offset) {
+                    Ordering::Greater => {
+                        return Err(format_err!("control offset went backwards"));
+                    }
+                    Ordering::Equal => {
+                        // This points back at us, so we're the last packet.
+                        break;
+                    }
+                    Ordering::Less => {
+                        control_offset = next_control_offset;
+                    }
                 }
             }
             IResult::Incomplete(_) => {
