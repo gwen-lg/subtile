@@ -89,10 +89,10 @@ named!(
         y1: call!(coordinate) >>
         y2: call!(coordinate) >>
         (Coordinates {
-            x1: x1,
-            y1: y1,
-            x2: x2,
-            y2: y2,
+            x1,
+            y1,
+            x2,
+            y2,
         })
     ))
 );
@@ -179,8 +179,8 @@ named!(
         commands: many_till!(call!(control_command),
                              call!(control_command_end)) >>
         (ControlSequence {
-            date: date,
-            next: next,
+            date,
+            next,
             commands: commands.0,
         })
     )
@@ -478,12 +478,12 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
 
     // Return our parsed subtitle.
     let result = Subtitle {
-        start_time: start_time,
-        end_time: end_time,
-        force: force,
-        coordinates: coordinates,
-        palette: palette,
-        alpha: alpha,
+        start_time,
+        end_time,
+        force,
+        coordinates,
+        palette,
+        alpha,
         raw_image: image,
     };
     trace!("Parsed subtitle: {:?}", &result);

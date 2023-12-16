@@ -71,7 +71,7 @@ named!(
     bits!(do_parse!(
         tag_bits!(u8, 4, 0b0010) >>
         pts: call!(clock) >>
-        (PtsDts { pts: pts, dts: None })
+        (PtsDts { pts, dts: None })
     ))
 );
 
@@ -83,7 +83,7 @@ named!(
         pts: call!(clock) >>
         tag_bits!(u8, 4, 0b0001) >>
         dts: call!(clock) >>
-        (PtsDts { pts: pts, dts: Some(dts) })
+        (PtsDts { pts, dts: Some(dts) })
     ))
 );
 
@@ -142,13 +142,13 @@ named!(
         crc_flag: call!(bool_flag) >>
         extension_flag: call!(bool_flag) >>
         (HeaderDataFlags {
-            pts_dts_flags: pts_dts_flags,
-            escr_flag: escr_flag,
-            es_rate_flag: es_rate_flag,
-            dsm_trick_mode_flag: dsm_trick_mode_flag,
-            additional_copy_info_flag: additional_copy_info_flag,
-            crc_flag: crc_flag,
-            extension_flag: extension_flag,
+            pts_dts_flags,
+            escr_flag,
+            es_rate_flag,
+            dsm_trick_mode_flag,
+            additional_copy_info_flag,
+            crc_flag,
+            extension_flag,
         })
     ))
 );
@@ -185,8 +185,8 @@ fn header_data_fields(i: &[u8], flags: HeaderDataFlags) -> IResult<&[u8], Header
     do_parse!(i,
         pts_dts: apply!(pts_dts, flags.pts_dts_flags) >>
         (HeaderData {
-            flags: flags,
-            pts_dts: pts_dts,
+            flags,
+            pts_dts,
             _placeholder: (),
         })
     )
@@ -256,11 +256,11 @@ named!(
         copyright: call!(bool_flag) >>
         original: call!(bool_flag) >>
         (Header {
-            scrambling_control: scrambling_control,
-            priority: priority,
-            data_alignment_indicator: data_alignment_indicator,
-            copyright: copyright,
-            original: original,
+            scrambling_control,
+            priority,
+            data_alignment_indicator,
+            copyright,
+            original,
         })
     ))
 );
@@ -295,10 +295,10 @@ named!(
         substream_id: call!(be_u8) >>
         data: call!(rest) >>
         (Packet {
-            header: header,
-            header_data: header_data,
-            substream_id: substream_id,
-            data: data
+            header,
+            header_data,
+            substream_id,
+            data
         })
     )
 );

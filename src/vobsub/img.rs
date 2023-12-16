@@ -46,7 +46,7 @@ named!(rle<(&[u8], usize), Rle>,
     do_parse!(
         cnt: call!(count) >>
         val: take_bits!(u8, 2) >>
-        (Rle { cnt: cnt, val: val })
+        (Rle { cnt, val })
     )
 );
 

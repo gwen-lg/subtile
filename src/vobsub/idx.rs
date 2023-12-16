@@ -149,7 +149,7 @@ impl Index {
             palette: palette_val
                 .ok_or_else(|| Error::from(VobsubError::MissingKey { key: "palette" }))
                 .with_context(|_| mkerr())?,
-            sub_data: sub_data,
+            sub_data,
         })
     }
 

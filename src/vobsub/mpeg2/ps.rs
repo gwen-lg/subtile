@@ -56,8 +56,8 @@ named!(pub header<Header>,
                 // fuzzing.
                 take_bits!(u64, stuffing_length * 8) >>
                 (Header {
-                    scr: scr,
-                    bit_rate: bit_rate,
+                    scr,
+                    bit_rate,
                 })
             )
         ) >>
@@ -81,8 +81,8 @@ named!(pub pes_packet<PesPacket>,
         ps_header: call!(header) >>
         pes_packet: call!(pes::packet) >>
         (PesPacket {
-            ps_header: ps_header,
-            pes_packet: pes_packet,
+            ps_header,
+            pes_packet,
         })
     )
 );
