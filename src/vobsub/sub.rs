@@ -8,9 +8,9 @@ use cast;
 use nom::{be_u16, IResult};
 use std::{cmp::Ordering, fmt};
 
-use super::idx;
 use super::img::{decompress, Size};
 use super::mpeg2::ps;
+use super::{idx, Palette};
 use crate::{util::BytesFormatter, Error, Result};
 use image::{ImageBuffer, Rgba, RgbaImage};
 
@@ -303,7 +303,7 @@ impl Subtitle {
     }
 
     /// Decompress to subtitle to an RBGA image.
-    pub fn to_image(&self, palette: &idx::Palette) -> RgbaImage {
+    pub fn to_image(&self, palette: &Palette) -> RgbaImage {
         let width = cast::u32(self.coordinates.width());
         let height = cast::u32(self.coordinates.height());
         ImageBuffer::from_fn(width, height, |x, y| {
