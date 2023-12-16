@@ -11,20 +11,12 @@
 // For error-chain.
 #![recursion_limit = "1024"]
 
-extern crate cast;
 #[macro_use]
 extern crate failure;
-#[cfg(test)]
-extern crate env_logger;
-extern crate image;
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate nom;
-extern crate regex;
-extern crate safemem;
 
 mod errors;
 mod util;
