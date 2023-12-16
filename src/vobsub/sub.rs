@@ -6,6 +6,7 @@
 
 use cast;
 use failure::format_err;
+use log::{trace, warn};
 use nom::{be_u16, IResult};
 use std::{cmp::Ordering, fmt};
 

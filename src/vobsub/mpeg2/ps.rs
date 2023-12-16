@@ -3,6 +3,7 @@
 //! This is the container format used at the top-level of a `*.sub` file.
 
 use failure::format_err;
+use log::{debug, trace, warn};
 use nom::IResult;
 use std::fmt;
 

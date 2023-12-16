@@ -2,6 +2,7 @@
 
 use cast;
 use failure::format_err;
+use log::trace;
 use nom::IResult;
 use safemem::write_bytes;
 

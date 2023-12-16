@@ -2,6 +2,7 @@
 
 use failure::{format_err, ResultExt};
 use lazy_static::lazy_static;
+use log::trace;
 use regex::Regex;
 use std::fs;
 use std::io;
