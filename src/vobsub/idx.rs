@@ -1,8 +1,8 @@
 //! Parse a file in `*.idx` format.
 
 use failure::{format_err, ResultExt};
-use lazy_static::lazy_static;
 use log::trace;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use std::fs;
 use std::io;
@@ -29,9 +29,7 @@ pub struct Index {
 impl Index {
     /// Open an `*.idx` file and the associated `*.sub` file.
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Index> {
-        lazy_static! {
-            static ref KEY_VALUE: Regex = Regex::new("^([A-Za-z/ ]+): (.*)").unwrap();
-        }
+        static KEY_VALUE: Lazy<Regex> = Lazy::new(|| Regex::new("^([A-Za-z/ ]+): (.*)").unwrap());
 
         let path = path.as_ref();
         let mut sub_path = path.to_owned();
