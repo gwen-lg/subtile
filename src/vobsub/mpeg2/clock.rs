@@ -38,9 +38,9 @@ impl fmt::Display for Clock {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = self.to_seconds();
         let h = (s / 3600.0).trunc();
-        s = s % 3600.0;
+        s %= 3600.0;
         let m = (s / 60.0).trunc();
-        s = s % 60.0;
+        s %= 60.0;
         write!(f, "{}:{:02}:{:1.3}", h, m, s)
     }
 }
