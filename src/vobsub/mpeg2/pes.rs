@@ -17,20 +17,15 @@ use crate::util::BytesFormatter;
 /// See the [PES header documentation][PES] for details.
 ///
 /// [PES]: http://dvd.sourceforge.net/dvdinfo/pes-hdr.html
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum PtsDtsFlags {
     /// No time stamps.
+    #[default]
     None,
     /// Presentation Time Stamp only.
     Pts,
     /// Presentation and Decode Time Stamps.
     PtsDts,
-}
-
-impl Default for PtsDtsFlags {
-    fn default() -> PtsDtsFlags {
-        PtsDtsFlags::None
-    }
 }
 
 /// Parse PTS & DTS flags in a PES packet header.  Consumes two bits.
