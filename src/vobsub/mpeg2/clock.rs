@@ -34,7 +34,7 @@ impl Clock {
     }
 }
 
-impl<'a> fmt::Display for Clock {
+impl fmt::Display for Clock {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = self.to_seconds();
         let h = (s / 3600.0).trunc();

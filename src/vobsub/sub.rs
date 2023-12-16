@@ -320,7 +320,7 @@ impl Subtitle {
     }
 }
 
-impl<'a> fmt::Debug for Subtitle {
+impl fmt::Debug for Subtitle {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Subtitle")
             .field("start_time", &self.start_time)
