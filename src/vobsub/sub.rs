@@ -659,7 +659,7 @@ fn parse_subtitles() {
     let sub1 = subs.next().expect("missing sub 1").unwrap();
     assert!(sub1.start_time - 49.4 < 0.1);
     assert!(sub1.end_time.unwrap() - 50.9 < 0.1);
-    assert_eq!(sub1.force, false);
+    assert!(!sub1.force);
     assert_eq!(
         sub1.coordinates,
         Coordinates {
