@@ -163,14 +163,11 @@ fn parse_header_data_flags() {
 }
 
 /// Header data fields.
+#[non_exhaustive]
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct HeaderData {
     pub flags: HeaderDataFlags,
     pub pts_dts: Option<PtsDts>,
-    /// There's lots of other header data we could deserialize here, but
-    /// we're not interested in any of it for subtitles.  Specify a private
-    /// placeholder field so we can extend this without breaking the API.
-    _placeholder: (),
 }
 
 /// Parse variable length header data, ignoring any fields we don't care
@@ -182,7 +179,6 @@ fn header_data_fields(i: &[u8], flags: HeaderDataFlags) -> IResult<&[u8], Header
         (HeaderData {
             flags,
             pts_dts,
-            _placeholder: (),
         })
     )
 }
