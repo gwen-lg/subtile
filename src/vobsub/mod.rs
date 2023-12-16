@@ -67,7 +67,7 @@ mod palette;
 mod probe;
 mod sub;
 
-pub use self::idx::Index;
+pub use self::idx::{read_palette, Index};
 pub use self::palette::{palette, Palette};
 pub use self::probe::{is_idx_file, is_sub_file};
 pub use self::sub::{subtitles, Coordinates, Subtitle, Subtitles};

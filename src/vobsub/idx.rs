@@ -6,11 +6,11 @@ use regex::Regex;
 use std::fs;
 use std::io;
 use std::io::prelude::*;
+use std::io::BufReader;
 use std::path::Path;
 
 use super::{palette, sub, Palette};
-use crate::errors::IResultExt;
-use crate::errors::SubError;
+use crate::errors::{IResultExt, SubError};
 
 /// A `*.idx` file describing the subtitles in a `*.sub` file.
 #[derive(Debug)]
@@ -26,36 +26,18 @@ pub struct Index {
 impl Index {
     /// Open an `*.idx` file and the associated `*.sub` file.
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Index, SubError> {
-        static KEY_VALUE: Lazy<Regex> = Lazy::new(|| Regex::new("^([A-Za-z/ ]+): (.*)").unwrap());
-
         let path = path.as_ref();
-        let mut sub_path = path.to_owned();
-        sub_path.set_extension("sub");
-
-        let mut palette_val: Option<Palette> = None;
-
-        let f = fs::File::open(path).map_err(|source| SubError::Io {
+        let mkerr_idx = |source| SubError::Io {
             source,
             path: path.into(),
-        })?;
-        let input = io::BufReader::new(f);
+        };
 
-        for line in input.lines() {
-            let line = line.map_err(|source| SubError::Io {
-                source,
-                path: path.into(),
-            })?;
-            if let Some(cap) = KEY_VALUE.captures(&line) {
-                let key = cap.get(1).unwrap().as_str();
-                let val = cap.get(2).unwrap().as_str();
-                match key {
-                    "palette" => {
-                        palette_val = Some(palette(val.as_bytes()).to_vobsub_result()?);
-                    }
-                    _ => trace!("Unimplemented idx key: {}", key),
-                }
-            }
-        }
+        let f = fs::File::open(path).map_err(mkerr_idx)?;
+        let input = io::BufReader::new(f);
+        let palette = read_palette(input, &mkerr_idx)?;
+
+        let mut sub_path = path.to_owned();
+        sub_path.set_extension("sub");
 
         let sub_path = sub_path.as_path();
         let mut sub = fs::File::open(sub_path).map_err(|source| SubError::Io {
@@ -69,7 +51,6 @@ impl Index {
                 path: sub_path.into(),
             })?;
 
-        let palette = palette_val.ok_or(SubError::MissingKey("palette"))?;
         Ok(Index { palette, sub_data })
     }
 
@@ -82,6 +63,33 @@ impl Index {
     pub fn subtitles(&self) -> sub::Subtitles {
         sub::subtitles(&self.sub_data)
     }
+}
+
+/// Read the palette in .idx file content
+pub fn read_palette<T, Err>(input: BufReader<T>, mkerr: &Err) -> Result<Palette, SubError>
+where
+    T: std::io::Read,
+    Err: Fn(io::Error) -> SubError,
+{
+    static KEY_VALUE: Lazy<Regex> = Lazy::new(|| Regex::new("^([A-Za-z/ ]+): (.*)").unwrap());
+
+    let mut palette_val: Option<Palette> = None;
+    for line in input.lines() {
+        let line = line.map_err(mkerr)?;
+        if let Some(cap) = KEY_VALUE.captures(&line) {
+            let key = cap.get(1).unwrap().as_str();
+            let val = cap.get(2).unwrap().as_str();
+            match key {
+                "palette" => {
+                    palette_val = Some(palette(val.as_bytes()).to_vobsub_result()?);
+                }
+                _ => trace!("Unimplemented idx key: {}", key),
+            }
+        }
+    }
+
+    let palette = palette_val.ok_or(SubError::MissingKey("palette"))?;
+    Ok(palette)
 }
 
 #[cfg(test)]
