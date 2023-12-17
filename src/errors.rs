@@ -1,30 +1,30 @@
 //! Custom error types.
 
-use crate::Result;
-use failure::Fail;
+use anyhow::Result;
 use nom::IResult;
 use std::default::Default;
 use std::fmt;
+use thiserror::Error;
 
-/// A type representing errors that are specific to `vobsub`. Note that we may
-/// normally return `Error`, not `VobsubError`, which allows to return other
+/// A type representing errors that are specific to `subtitles-utils`. Note that we may
+/// normally return `Error`, not `SubError`, which allows to return other
 /// kinds of errors from third-party libraries.
-#[derive(Debug, Fail)]
-pub enum VobsubError {
+#[derive(Debug, Error)]
+pub enum SubError {
     /// Our input data ended sooner than we expected.
-    #[fail(display = "Input ended unexpectedly")]
+    #[error("Input ended unexpectedly")]
     IncompleteInput,
 
     /// We were unable to find a required key in an `*.idx` file.
-    #[fail(display = "Could not find required key '{}'", key)]
+    #[error("Could not find required key '{key}'")]
     MissingKey { key: &'static str },
 
     /// We could not parse a value.
-    #[fail(display = "Could not parse: {}", message)]
+    #[error("Could not parse: {message}")]
     Parse { message: String },
 
     /// We have leftover input that we didn't expect.
-    #[fail(display = "Unexpected extra input")]
+    #[error("Unexpected extra input")]
     UnexpectedInput,
 }
 
@@ -47,16 +47,16 @@ impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E>
                 if rest == I::default() {
                     Ok(val)
                 } else {
-                    Err(VobsubError::UnexpectedInput.into())
+                    Err(SubError::UnexpectedInput.into())
                 }
             }
             IResult::Err(err) => match err {
-                nom::Err::Incomplete(_) => Err(VobsubError::IncompleteInput.into()),
-                nom::Err::Error(err) => Err(VobsubError::Parse {
+                nom::Err::Incomplete(_) => Err(SubError::IncompleteInput.into()),
+                nom::Err::Error(err) => Err(SubError::Parse {
                     message: format!("{:?}", err),
                 }
                 .into()),
-                nom::Err::Failure(err) => Err(VobsubError::Parse {
+                nom::Err::Failure(err) => Err(SubError::Parse {
                     message: format!("{:?}", err),
                 }
                 .into()),

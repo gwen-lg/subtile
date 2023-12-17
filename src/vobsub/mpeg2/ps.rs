@@ -2,7 +2,7 @@
 //!
 //! This is the container format used at the top-level of a `*.sub` file.
 
-use failure::format_err;
+use anyhow::{anyhow, Result};
 use log::{debug, trace, warn};
 use nom::{
     bits::{
@@ -17,7 +17,6 @@ use std::fmt;
 
 use super::clock::{clock_and_ext, Clock};
 use super::pes;
-use crate::Result;
 
 /// A parsed [MPEG-2 Program Stream header][MPEG-PS] (MPEG-PS).
 ///
@@ -139,7 +138,7 @@ impl<'a> Iterator for PesPackets<'a> {
                         nom::Err::Incomplete(needed) => {
                             self.remaining = &[];
                             warn!("Incomplete packet, need: {:?}", needed);
-                            return Some(Err(format_err!("Incomplete PES packet")));
+                            return Some(Err(anyhow!("Incomplete PES packet")));
                         }
                         // We got something that looked like a packet but
                         // wasn't parseable.  Log it and keep trying.

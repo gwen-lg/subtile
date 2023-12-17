@@ -1,4 +1,4 @@
-use failure::format_err;
+use anyhow::anyhow;
 use image::Rgb;
 use nom::{
     bytes::complete::{tag, take_while_m_n},
@@ -36,7 +36,7 @@ pub type Palette = [Rgb<u8>; 16];
 pub fn palette(input: &[u8]) -> IResult<&[u8], Palette> {
     let res = map_res(separated_list0(tag(b", "), hex_rgb), |vec: Vec<Rgb<u8>>| {
         if vec.len() != 16 {
-            return Err(format_err!("Palettes must have 16 entries"));
+            return Err(anyhow!("Palettes must have 16 entries"));
         }
         // Coerce vector to known-size slice.  Based on
         // http://stackoverflow.com/q/25428920/12089.

@@ -1,6 +1,6 @@
 //! Parse a file in `*.idx` format.
 
-use failure::{format_err, ResultExt};
+use anyhow::{anyhow, Context, Result};
 use log::trace;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -10,10 +10,8 @@ use std::io::prelude::*;
 use std::path::Path;
 
 use super::{palette, sub, Palette};
-use crate::{
-    errors::{IResultExt, VobsubError},
-    Error, Result,
-};
+use crate::errors::IResultExt;
+use crate::errors::SubError;
 
 /// A `*.idx` file describing the subtitles in a `*.sub` file.
 #[derive(Debug)]
@@ -35,15 +33,15 @@ impl Index {
         let mut sub_path = path.to_owned();
         sub_path.set_extension("sub");
 
-        let mkerr = || format_err!("Could not parse {}", path.display());
+        let mkerr = || anyhow!("Could not parse {}", path.display());
 
         let mut palette_val: Option<Palette> = None;
 
-        let f = fs::File::open(path).with_context(|_| mkerr())?;
+        let f = fs::File::open(path).with_context(mkerr)?;
         let input = io::BufReader::new(f);
 
         for line in input.lines() {
-            let line = line.with_context(|_| mkerr())?;
+            let line = line.with_context(mkerr)?;
             if let Some(cap) = KEY_VALUE.captures(&line) {
                 let key = cap.get(1).unwrap().as_str();
                 let val = cap.get(2).unwrap().as_str();
@@ -62,8 +60,8 @@ impl Index {
 
         Ok(Index {
             palette: palette_val
-                .ok_or_else(|| Error::from(VobsubError::MissingKey { key: "palette" }))
-                .with_context(|_| mkerr())?,
+                .ok_or(SubError::MissingKey { key: "palette" })
+                .with_context(mkerr)?,
             sub_data,
         })
     }

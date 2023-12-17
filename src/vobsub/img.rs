@@ -1,7 +1,7 @@
 //! Run-length encoded image format for subtitles.
 
+use anyhow::{anyhow, Result};
 use cast;
-use failure::format_err;
 use log::trace;
 use nom::{
     bits::complete::{tag as tag_bits, take as take_bits},
@@ -12,7 +12,7 @@ use nom::{
 };
 use safemem::write_bytes;
 
-use crate::{util::BytesFormatter, Result};
+use crate::util::BytesFormatter;
 
 /// The dimensions of an image.
 #[derive(Debug)]
@@ -73,30 +73,30 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize> {
                     cast::usize(run.cnt)
                 };
                 if x + count > output.len() {
-                    return Err(format_err!("scan line is too long"));
+                    return Err(anyhow!("scan line is too long"));
                 }
                 write_bytes(&mut output[x..x + count], run.val);
                 x += count;
             }
             IResult::Err(err) => match err {
                 nom::Err::Incomplete(needed) => {
-                    return Err(format_err!(
+                    return Err(anyhow!(
                         "not enough bytes parsing subtitle scan \
                                            line: {:?}",
                         needed
                     ));
                 }
                 nom::Err::Error(err) => {
-                    return Err(format_err!("error parsing subtitle scan line: {:?}", err));
+                    return Err(anyhow!("error parsing subtitle scan line: {:?}", err));
                 }
                 nom::Err::Failure(err) => {
-                    return Err(format_err!("Failure parsing subtitle scan line: {:?}", err));
+                    return Err(anyhow!("Failure parsing subtitle scan line: {:?}", err));
                 }
             },
         }
     }
     if x > width {
-        return Err(format_err!("decoded scan line is too long"));
+        return Err(anyhow!("decoded scan line is too long"));
     }
     // Round up to the next full byte.
     if pos.1 > 0 {

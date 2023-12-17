@@ -67,8 +67,6 @@ mod palette;
 mod probe;
 mod sub;
 
-pub use crate::{Error, Result};
-
 pub use self::idx::Index;
 pub use self::palette::{palette, Palette};
 pub use self::probe::{is_idx_file, is_sub_file};

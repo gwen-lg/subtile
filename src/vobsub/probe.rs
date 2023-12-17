@@ -1,20 +1,18 @@
 //! Try to guess the types of files on disk.
 
+use anyhow::{anyhow, Context, Result};
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 
-use crate::Result;
-use failure::{format_err, ResultExt};
-
 /// Internal helper function which looks for "magic" bytes at the start of
 /// a file.
 fn has_magic(path: &Path, magic: &[u8]) -> Result<bool> {
-    let mkerr = || format_err!("Could not open {}", path.display());
+    let mkerr = || anyhow!("Could not open {}", path.display());
 
-    let mut f = fs::File::open(path).with_context(|_| mkerr())?;
+    let mut f = fs::File::open(path).with_context(mkerr)?;
     let mut bytes = vec![0; magic.len()];
-    f.read_exact(&mut bytes).with_context(|_| mkerr())?;
+    f.read_exact(&mut bytes).with_context(mkerr)?;
     Ok(magic == &bytes[..])
 }
 
