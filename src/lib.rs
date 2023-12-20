@@ -11,9 +11,6 @@
 // For error-chain.
 #![recursion_limit = "1024"]
 
-#[macro_use]
-extern crate nom;
-
 mod errors;
 mod util;
 pub mod vobsub;
