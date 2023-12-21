@@ -27,7 +27,7 @@ impl Clock {
     }
 
     /// Convert a `Clock` value to seconds.
-    pub fn to_seconds(&self) -> f64 {
+    pub fn as_seconds(&self) -> f64 {
         let base = (self.value >> 9) as f64;
         let ext = (self.value & 0x1F) as f64;
         (base + ext / 300.0) / 90000.0
@@ -36,7 +36,7 @@ impl Clock {
 
 impl fmt::Display for Clock {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut s = self.to_seconds();
+        let mut s = self.as_seconds();
         let h = (s / 3600.0).trunc();
         s %= 3600.0;
         let m = (s / 60.0).trunc();

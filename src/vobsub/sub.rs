@@ -466,7 +466,7 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
             Some(v) => v,
             None => return Some(Err(format_err!("found subtitle without timing into"))),
         };
-        let base_time = pts_dts.pts.to_seconds();
+        let base_time = pts_dts.pts.as_seconds();
         let substream_id = first.pes_packet.substream_id;
 
         // Figure out how many total bytes we'll need to collect from one
