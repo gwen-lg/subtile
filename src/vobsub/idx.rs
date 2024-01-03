@@ -52,7 +52,7 @@ impl Index {
             }
         }
 
-        let mut sub = fs::File::open(sub_path)?;
+        let mut sub = fs::File::open(sub_path).context("Try open sub file")?;
         let mut sub_data = vec![];
         sub.read_to_end(&mut sub_data)?;
 
