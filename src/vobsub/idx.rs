@@ -1,6 +1,6 @@
 //! Parse a file in `*.idx` format.
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use log::trace;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -33,15 +33,13 @@ impl Index {
         let mut sub_path = path.to_owned();
         sub_path.set_extension("sub");
 
-        let mkerr = || anyhow!("Could not parse {}", path.display());
-
         let mut palette_val: Option<Palette> = None;
 
-        let f = fs::File::open(path).with_context(mkerr)?;
+        let f = fs::File::open(path).context("Try open idx file")?;
         let input = io::BufReader::new(f);
 
         for line in input.lines() {
-            let line = line.with_context(mkerr)?;
+            let line = line.context("Try read line")?;
             if let Some(cap) = KEY_VALUE.captures(&line) {
                 let key = cap.get(1).unwrap().as_str();
                 let val = cap.get(2).unwrap().as_str();
