@@ -56,12 +56,8 @@ impl Index {
         let mut sub_data = vec![];
         sub.read_to_end(&mut sub_data)?;
 
-        Ok(Index {
-            palette: palette_val
-                .ok_or(SubError::MissingKey { key: "palette" })
-                .context("Try read 'palette' in .idx file.")?,
-            sub_data,
-        })
+        let palette = palette_val.ok_or(SubError::MissingKey { key: "palette" })?;
+        Ok(Index { palette, sub_data })
     }
 
     /// Get the palette associated with this `*.idx` file.
