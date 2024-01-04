@@ -69,7 +69,7 @@ impl Index {
                 path: sub_path.into(),
             })?;
 
-        let palette = palette_val.ok_or(SubError::MissingKey { key: "palette" })?;
+        let palette = palette_val.ok_or(SubError::MissingKey("palette"))?;
         Ok(Index { palette, sub_data })
     }
 

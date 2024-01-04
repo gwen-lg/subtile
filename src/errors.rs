@@ -17,8 +17,8 @@ pub enum SubError {
     IncompleteInput,
 
     /// We were unable to find a required key in an `*.idx` file.
-    #[error("Could not find required key '{key}'")]
-    MissingKey { key: &'static str },
+    #[error("Could not find required key '{0}'")]
+    MissingKey(&'static str),
 
     /// We could not parse a value.
     #[error("Could not parse: {0}")]
