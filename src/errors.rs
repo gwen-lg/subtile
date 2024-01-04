@@ -1,6 +1,5 @@
 //! Custom error types.
 
-use anyhow::Result;
 use nom::IResult;
 use std::default::Default;
 use std::fmt;
@@ -30,7 +29,7 @@ pub enum SubError {
 
 pub trait IResultExt<I, O, E> {
     fn ignore_trailing_data(self) -> IResult<I, O, E>;
-    fn to_vobsub_result(self) -> Result<O>;
+    fn to_vobsub_result(self) -> Result<O, SubError>;
 }
 
 impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E> {
@@ -41,19 +40,19 @@ impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E>
         }
     }
 
-    fn to_vobsub_result(self) -> Result<O> {
+    fn to_vobsub_result(self) -> Result<O, SubError> {
         match self {
             IResult::Ok((rest, val)) => {
                 if rest == I::default() {
                     Ok(val)
                 } else {
-                    Err(SubError::UnexpectedInput.into())
+                    Err(SubError::UnexpectedInput)
                 }
             }
             IResult::Err(err) => match err {
-                nom::Err::Incomplete(_) => Err(SubError::IncompleteInput.into()),
-                nom::Err::Error(err) => Err(SubError::Parse(format!("{:?}", err)).into()),
-                nom::Err::Failure(err) => Err(SubError::Parse(format!("{:?}", err)).into()),
+                nom::Err::Incomplete(_) => Err(SubError::IncompleteInput),
+                nom::Err::Error(err) => Err(SubError::Parse(format!("{:?}", err))),
+                nom::Err::Failure(err) => Err(SubError::Parse(format!("{:?}", err))),
             },
         }
     }
