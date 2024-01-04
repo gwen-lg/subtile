@@ -4,7 +4,6 @@
 //!
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
-use anyhow::{anyhow, Result};
 use cast;
 use log::{trace, warn};
 use nom::{
@@ -23,7 +22,7 @@ use std::{cmp::Ordering, fmt};
 use super::img::{decompress, Size};
 use super::mpeg2::ps;
 use super::Palette;
-use crate::util::BytesFormatter;
+use crate::{util::BytesFormatter, SubError};
 use image::{ImageBuffer, Rgba, RgbaImage};
 
 /// The default time between two adjacent subtitles if no end time is
@@ -299,10 +298,10 @@ impl fmt::Debug for Subtitle {
 
 /// Parse a single `u16` value from a buffer.  We don't use `nom` for this
 /// because it has an inconvenient error type.
-fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize)> {
+fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize), SubError> {
     if buff.len() < 2 {
-        Err(anyhow!(
-            "unexpected end of buffer while parsing 16-bit size"
+        Err(SubError::Parse(
+            "unexpected end of buffer while parsing 16-bit size".into(),
         ))
     } else {
         Ok((&buff[2..], usize::from(buff[0]) << 8 | usize::from(buff[1])))
@@ -310,13 +309,13 @@ fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize)> {
 }
 
 /// Parse a subtitle.
-fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
+fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
     // This parser is somewhat non-standard, because we need to work with
     // explicit offsets into `packet` in several places.
 
     // Figure out where our control data starts.
     if raw_data.len() < 2 {
-        return Err(anyhow!("unexpected end of subtitle data"));
+        return Err(SubError::Parse("unexpected end of subtitle data".into()));
     }
     let (_, initial_control_offset) = parse_be_u16_as_usize(&raw_data[2..])?;
 
@@ -334,12 +333,12 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
     loop {
         trace!("looking for control sequence at: 0x{:x}", control_offset);
         if control_offset >= raw_data.len() {
-            return Err(anyhow!(
+            return Err(SubError::Parse(format!(
                 "control offset is 0x{:x}, but packet is only 0x{:x} \
                                    bytes",
                 control_offset,
                 raw_data.len()
-            ));
+            )));
         }
 
         let control_data = &raw_data[control_offset..];
@@ -374,7 +373,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
                             // have non-negative width and height and we'll
                             // crash if they don't.
                             if c.x2 <= c.x1 || c.y2 <= c.y1 {
-                                return Err(anyhow!("invalid bounding box"));
+                                return Err(SubError::Parse("invalid bounding box".into()));
                             }
                             coordinates = coordinates.or(Some(c.clone()));
                         }
@@ -392,7 +391,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
                 let next_control_offset = cast::usize(control.next);
                 match control_offset.cmp(&next_control_offset) {
                     Ordering::Greater => {
-                        return Err(anyhow!("control offset went backwards"));
+                        return Err(SubError::Parse("control offset went backwards".into()));
                     }
                     Ordering::Equal => {
                         // This points back at us, so we're the last packet.
@@ -405,24 +404,33 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
             }
             IResult::Err(err) => match err {
                 nom::Err::Incomplete(_) => {
-                    return Err(anyhow!("incomplete control packet"));
+                    return Err(SubError::Parse("incomplete control packet".into()));
                 }
                 nom::Err::Error(err) => {
-                    return Err(anyhow!("error parsing subtitle: {:?}", err));
+                    return Err(SubError::Parse(format!(
+                        "error parsing subtitle: {:?}",
+                        err
+                    )));
                 }
                 nom::Err::Failure(err) => {
-                    return Err(anyhow!("Failure parsing subtitle: {:?}", err));
+                    return Err(SubError::Parse(format!(
+                        "Failure parsing subtitle: {:?}",
+                        err
+                    )));
                 }
             },
         }
     }
 
     // Make sure we found all the control commands that we expect.
-    let start_time = start_time.ok_or_else(|| anyhow!("no start time for subtitle"))?;
-    let coordinates = coordinates.ok_or_else(|| anyhow!("no coordinates for subtitle"))?;
-    let palette = palette.ok_or_else(|| anyhow!("no palette for subtitle"))?;
-    let alpha = alpha.ok_or_else(|| anyhow!("no alpha for subtitle"))?;
-    let rle_offsets = rle_offsets.ok_or_else(|| anyhow!("no RLE offsets for subtitle"))?;
+    let start_time =
+        start_time.ok_or_else(|| SubError::Parse("no start time for subtitle".into()))?;
+    let coordinates =
+        coordinates.ok_or_else(|| SubError::Parse("no coordinates for subtitle".into()))?;
+    let palette = palette.ok_or_else(|| SubError::Parse("no palette for subtitle".into()))?;
+    let alpha = alpha.ok_or_else(|| SubError::Parse("no alpha for subtitle".into()))?;
+    let rle_offsets =
+        rle_offsets.ok_or_else(|| SubError::Parse("no RLE offsets for subtitle".into()))?;
 
     // Decompress our image.
     //
@@ -441,7 +449,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle> {
     let start_1 = cast::usize(rle_offsets[1]);
     let end = cast::usize(initial_control_offset + 2);
     if start_0 > start_1 || start_1 > end {
-        return Err(anyhow!("invalid scan line offsets"));
+        return Err(SubError::Parse("invalid scan line offsets".into()));
     }
     let image = decompress(
         coordinates.size(),
@@ -483,7 +491,7 @@ struct SubtitlesInternal<'a> {
 }
 
 impl<'a> Iterator for SubtitlesInternal<'a> {
-    type Item = Result<Subtitle>;
+    type Item = Result<Subtitle, SubError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Get the PES packet containing the first chunk of our subtitle.
@@ -492,7 +500,11 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
         // Fetch useful information from our first packet.
         let pts_dts = match first.pes_packet.header_data.pts_dts {
             Some(v) => v,
-            None => return Some(Err(anyhow!("found subtitle without timing into"))),
+            None => {
+                return Some(Err(SubError::Parse(
+                    "found subtitle without timing into".into(),
+                )))
+            }
         };
         let base_time = pts_dts.pts.as_seconds();
         let substream_id = first.pes_packet.substream_id;
@@ -500,7 +512,7 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
         // Figure out how many total bytes we'll need to collect from one
         // or more PES packets, and collect the first chunk into a buffer.
         if first.pes_packet.data.len() < 2 {
-            return Some(Err(anyhow!("packet is too short")));
+            return Some(Err(SubError::Parse("packet is too short".into())));
         }
         let wanted =
             usize::from(first.pes_packet.data[0]) << 8 | usize::from(first.pes_packet.data[1]);
@@ -548,7 +560,7 @@ pub struct Subtitles<'a> {
 }
 
 impl<'a> Iterator for Subtitles<'a> {
-    type Item = Result<Subtitle>;
+    type Item = Result<Subtitle, SubError>;
 
     // This whole routine exists to make sure that `end_time` is set to a
     // useful value even if the subtitles themselves didn't supply one.

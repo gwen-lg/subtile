@@ -2,7 +2,6 @@
 //!
 //! This is the container format used at the top-level of a `*.sub` file.
 
-use anyhow::{anyhow, Result};
 use log::{debug, trace, warn};
 use nom::{
     bits::{
@@ -14,6 +13,8 @@ use nom::{
     IResult,
 };
 use std::fmt;
+
+use crate::SubError;
 
 use super::clock::{clock_and_ext, Clock};
 use super::pes;
@@ -110,7 +111,7 @@ pub struct PesPackets<'a> {
 }
 
 impl<'a> Iterator for PesPackets<'a> {
-    type Item = Result<PesPacket<'a>>;
+    type Item = Result<PesPacket<'a>, SubError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -138,7 +139,7 @@ impl<'a> Iterator for PesPackets<'a> {
                         nom::Err::Incomplete(needed) => {
                             self.remaining = &[];
                             warn!("Incomplete packet, need: {:?}", needed);
-                            return Some(Err(anyhow!("Incomplete PES packet")));
+                            return Some(Err(SubError::Parse("Incomplete PES packet".into())));
                         }
                         // We got something that looked like a packet but
                         // wasn't parseable.  Log it and keep trying.
