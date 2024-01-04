@@ -1,6 +1,5 @@
 //! Parse a file in `*.idx` format.
 
-use anyhow::{Context, Result};
 use log::trace;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -26,7 +25,7 @@ pub struct Index {
 
 impl Index {
     /// Open an `*.idx` file and the associated `*.sub` file.
-    pub fn open<P: AsRef<Path>>(path: P) -> Result<Index> {
+    pub fn open<P: AsRef<Path>>(path: P) -> Result<Index, SubError> {
         static KEY_VALUE: Lazy<Regex> = Lazy::new(|| Regex::new("^([A-Za-z/ ]+): (.*)").unwrap());
 
         let path = path.as_ref();
@@ -35,11 +34,17 @@ impl Index {
 
         let mut palette_val: Option<Palette> = None;
 
-        let f = fs::File::open(path).context("Try open idx file")?;
+        let f = fs::File::open(path).map_err(|source| SubError::Io {
+            source,
+            path: path.into(),
+        })?;
         let input = io::BufReader::new(f);
 
         for line in input.lines() {
-            let line = line.context("Try read line")?;
+            let line = line.map_err(|source| SubError::Io {
+                source,
+                path: path.into(),
+            })?;
             if let Some(cap) = KEY_VALUE.captures(&line) {
                 let key = cap.get(1).unwrap().as_str();
                 let val = cap.get(2).unwrap().as_str();
@@ -52,9 +57,17 @@ impl Index {
             }
         }
 
-        let mut sub = fs::File::open(sub_path).context("Try open sub file")?;
+        let sub_path = sub_path.as_path();
+        let mut sub = fs::File::open(sub_path).map_err(|source| SubError::Io {
+            source,
+            path: sub_path.into(),
+        })?;
         let mut sub_data = vec![];
-        sub.read_to_end(&mut sub_data)?;
+        sub.read_to_end(&mut sub_data)
+            .map_err(|source| SubError::Io {
+                source,
+                path: sub_path.into(),
+            })?;
 
         let palette = palette_val.ok_or(SubError::MissingKey { key: "palette" })?;
         Ok(Index { palette, sub_data })

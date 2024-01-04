@@ -3,6 +3,8 @@
 use nom::IResult;
 use std::default::Default;
 use std::fmt;
+use std::io;
+use std::path::PathBuf;
 use thiserror::Error;
 
 /// A type representing errors that are specific to `subtitles-utils`. Note that we may
@@ -29,6 +31,15 @@ pub enum SubError {
     /// We have leftover input that we didn't expect.
     #[error("Unexpected extra input")]
     UnexpectedInput,
+
+    /// We could not read a file.
+    #[error("Could not read '{path}'")]
+    Io {
+        /// Source error
+        source: io::Error,
+        /// Path of the file we tried to read
+        path: PathBuf,
+    },
 }
 
 pub trait IResultExt<I, O, E> {
