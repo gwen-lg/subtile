@@ -20,8 +20,8 @@ pub enum SubError {
     MissingKey { key: &'static str },
 
     /// We could not parse a value.
-    #[error("Could not parse: {message}")]
-    Parse { message: String },
+    #[error("Could not parse: {0}")]
+    Parse(String),
 
     /// We have leftover input that we didn't expect.
     #[error("Unexpected extra input")]
@@ -52,14 +52,8 @@ impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E>
             }
             IResult::Err(err) => match err {
                 nom::Err::Incomplete(_) => Err(SubError::IncompleteInput.into()),
-                nom::Err::Error(err) => Err(SubError::Parse {
-                    message: format!("{:?}", err),
-                }
-                .into()),
-                nom::Err::Failure(err) => Err(SubError::Parse {
-                    message: format!("{:?}", err),
-                }
-                .into()),
+                nom::Err::Error(err) => Err(SubError::Parse(format!("{:?}", err)).into()),
+                nom::Err::Failure(err) => Err(SubError::Parse(format!("{:?}", err)).into()),
             },
         }
     }
