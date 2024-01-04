@@ -15,4 +15,4 @@ mod errors;
 mod util;
 pub mod vobsub;
 
-pub use anyhow::Error as AnyhowError;
+pub use errors::SubError;
