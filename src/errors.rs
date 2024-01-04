@@ -22,6 +22,10 @@ pub enum SubError {
     #[error("Could not parse: {0}")]
     Parse(String),
 
+    /// We could not process a subtitle image.
+    #[error("Could not process subtitle image: {0}")]
+    Image(String),
+
     /// We have leftover input that we didn't expect.
     #[error("Unexpected extra input")]
     UnexpectedInput,

@@ -1,6 +1,5 @@
 //! Run-length encoded image format for subtitles.
 
-use anyhow::{anyhow, Result};
 use cast;
 use log::trace;
 use nom::{
@@ -12,7 +11,7 @@ use nom::{
 };
 use safemem::write_bytes;
 
-use crate::util::BytesFormatter;
+use crate::{util::BytesFormatter, SubError};
 
 /// The dimensions of an image.
 #[derive(Debug)]
@@ -57,7 +56,7 @@ fn rle(input: (&[u8], usize)) -> IResult<(&[u8], usize), Rle> {
 
 /// Decompress the scan-line `input` into `output`, returning the number of
 /// input bytes consumed.
-fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize> {
+fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize, SubError> {
     trace!("scan line starting with {:?}", BytesFormatter(input));
     let width = output.len();
     let mut x = 0;
@@ -73,30 +72,36 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize> {
                     cast::usize(run.cnt)
                 };
                 if x + count > output.len() {
-                    return Err(anyhow!("scan line is too long"));
+                    return Err(SubError::Image("scan line is too long".into()));
                 }
                 write_bytes(&mut output[x..x + count], run.val);
                 x += count;
             }
             IResult::Err(err) => match err {
                 nom::Err::Incomplete(needed) => {
-                    return Err(anyhow!(
+                    return Err(SubError::Image(format!(
                         "not enough bytes parsing subtitle scan \
                                            line: {:?}",
                         needed
-                    ));
+                    )));
                 }
                 nom::Err::Error(err) => {
-                    return Err(anyhow!("error parsing subtitle scan line: {:?}", err));
+                    return Err(SubError::Image(format!(
+                        "error parsing subtitle scan line: {:?}",
+                        err
+                    )));
                 }
                 nom::Err::Failure(err) => {
-                    return Err(anyhow!("Failure parsing subtitle scan line: {:?}", err));
+                    return Err(SubError::Image(format!(
+                        "Failure parsing subtitle scan line: {:?}",
+                        err
+                    )));
                 }
             },
         }
     }
     if x > width {
-        return Err(anyhow!("decoded scan line is too long"));
+        return Err(SubError::Image("decoded scan line is too long".into()));
     }
     // Round up to the next full byte.
     if pos.1 > 0 {
@@ -108,7 +113,7 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize> {
 /// Decompress a run-length encoded image, and return a vector in row-major
 /// order, starting at the upper-left and scanning right and down, with one
 /// byte for each 2-bit value.
-pub fn decompress(size: Size, data: [&[u8]; 2]) -> Result<Vec<u8>> {
+pub fn decompress(size: Size, data: [&[u8]; 2]) -> Result<Vec<u8>, SubError> {
     trace!(
         "decompressing image {:?}, max: [0x{:x}, 0x{:x}]",
         &size,
