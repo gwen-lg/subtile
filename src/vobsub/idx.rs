@@ -71,7 +71,7 @@ impl Index {
 }
 
 /// Read the palette in .idx file content
-pub fn read_palette<T, Err>(input: BufReader<T>, mkerr: &Err) -> Result<Palette, SubError>
+pub fn read_palette<T, Err>(mut input: BufReader<T>, mkerr: &Err) -> Result<Palette, SubError>
 where
     T: std::io::Read,
     Err: Fn(io::Error) -> SubError,
@@ -79,9 +79,10 @@ where
     static KEY_VALUE: Lazy<Regex> = Lazy::new(|| Regex::new("^([A-Za-z/ ]+): (.*)").unwrap());
 
     let mut palette_val: Option<Palette> = None;
-    for line in input.lines() {
-        let line = line.map_err(mkerr)?;
-        if let Some(cap) = KEY_VALUE.captures(&line) {
+    let mut buf = String::with_capacity(256);
+    while input.read_line(&mut buf).map_err(mkerr)? > 0 {
+        let line = buf.trim_end();
+        if let Some(cap) = KEY_VALUE.captures(line) {
             let key = cap.get(1).unwrap().as_str();
             let val = cap.get(2).unwrap().as_str();
             match key {
@@ -91,6 +92,7 @@ where
                 _ => trace!("Unimplemented idx key: {}", key),
             }
         }
+        buf.clear();
     }
 
     let palette = palette_val.ok_or(SubError::MissingKey("palette"))?;
