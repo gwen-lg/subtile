@@ -516,7 +516,8 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
         }
         let wanted =
             usize::from(first.pes_packet.data[0]) << 8 | usize::from(first.pes_packet.data[1]);
-        let mut sub_packet = first.pes_packet.data.to_owned();
+        let mut sub_packet = Vec::with_capacity(wanted);
+        sub_packet.extend_from_slice(first.pes_packet.data);
 
         // Keep fetching more packets until we have enough.
         while sub_packet.len() < wanted {
