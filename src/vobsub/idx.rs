@@ -71,6 +71,7 @@ impl Index {
 }
 
 /// Read the palette in .idx file content
+#[profiling::function]
 pub fn read_palette<T, Err>(mut input: BufReader<T>, mkerr: &Err) -> Result<Palette, SubError>
 where
     T: std::io::Read,

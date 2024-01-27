@@ -113,6 +113,7 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize, SubError> {
 /// Decompress a run-length encoded image, and return a vector in row-major
 /// order, starting at the upper-left and scanning right and down, with one
 /// byte for each 2-bit value.
+#[profiling::function]
 pub fn decompress(size: Size, data: [&[u8]; 2]) -> Result<Vec<u8>, SubError> {
     trace!(
         "decompressing image {:?}, max: [0x{:x}, 0x{:x}]",

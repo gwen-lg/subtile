@@ -494,6 +494,8 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
     type Item = Result<Subtitle, SubError>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        profiling::scope!("SubtitlesInternal next");
+
         // Get the PES packet containing the first chunk of our subtitle.
         let first: ps::PesPacket = try_iter!(self.pes_packets.next());
 
@@ -568,6 +570,8 @@ impl<'a> Iterator for Subtitles<'a> {
     // I'm not even sure this is valid, but it has been observed in the
     // wild.
     fn next(&mut self) -> Option<Self::Item> {
+        profiling::scope!("Subtitles next");
+
         // If we don't currently have a previous subtitle, attempt to fetch
         // one.
         if self.prev.is_none() {
