@@ -12,6 +12,8 @@
 #![recursion_limit = "1024"]
 
 mod errors;
+/// Module for time management
+pub mod time;
 mod util;
 pub mod vobsub;
 
