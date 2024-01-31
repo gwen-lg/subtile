@@ -1,0 +1,63 @@
+name: Continus Integration
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build.yml"
+      - "Cargo.*"
+      - "src/**"
+  pull_request:
+    paths:
+      - ".github/workflows/build.yml"
+      - "Cargo.*"
+      - "src/**"
+
+env: 
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check_and_clippy:
+    runs-on: ubuntu-22.04
+    env:
+      RUSTFLAGS: "-D warnings"
+    strategy:
+      fail-fast: false
+
+    name: Cargo clippy, test, fmt & doc
+
+    steps:
+      - name: "Install dependencies Ubuntu"
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends openssl build-essential libmariadb-dev-compat libpq-dev libssl-dev pkg-config
+
+      - name: "Install rust-toolchain stable"
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: "Show environment"
+        run: |
+          rustc -vV
+          cargo -vV
+
+      - name: "Checkout"
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
+
+      - name: "Cargo clippy"
+        id: cargo_clippy
+        run: |
+          cargo clippy --profile=test -- -D warnings
+
+      - name: "Cargo test"
+        id: cargo_test
+        run: |
+          cargo test
+
+      - name: "Cargo formatting"
+        id: cargo_fmt
+        run: |
+          cargo fmt --all -- --check
+
+      - name: "Cargo doc"
+        id: cargo_doc
+        run: |
+          cargo doc
