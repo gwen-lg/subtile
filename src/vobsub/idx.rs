@@ -59,7 +59,7 @@ impl Index {
         Ok(Index {
             palette: palette_val
                 .ok_or(SubError::MissingKey { key: "palette" })
-                .with_context(mkerr)?,
+                .context("Try read 'palette' in .idx file.")?,
             sub_data,
         })
     }
