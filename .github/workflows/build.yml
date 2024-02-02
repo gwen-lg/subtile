@@ -44,20 +44,24 @@ jobs:
 
       - name: "Cargo clippy"
         id: cargo_clippy
+        if: $${{ always() }}
         run: |
           cargo clippy --profile=test -- -D warnings
 
       - name: "Cargo test"
         id: cargo_test
+        if: $${{ always() }}
         run: |
           cargo test
 
       - name: "Cargo formatting"
         id: cargo_fmt
+        if: $${{ always() }}
         run: |
           cargo fmt --all -- --check
 
       - name: "Cargo doc"
         id: cargo_doc
+        if: $${{ always() }}
         run: |
           cargo doc
