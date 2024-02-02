@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: "Install dependencies Ubuntu"
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends openssl build-essential libmariadb-dev-compat libpq-dev libssl-dev pkg-config
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential pkg-config
 
       - name: "Install rust-toolchain stable"
         uses: dtolnay/rust-toolchain@stable
