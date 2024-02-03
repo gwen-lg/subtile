@@ -12,7 +12,7 @@ on:
       - "Cargo.*"
       - "src/**"
 
-env: 
+env:
   CARGO_TERM_COLOR: always
 
 jobs:
