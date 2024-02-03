@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "A crate of utils to operate traitements on subtitles"
 repository = "https://github.com/gwen-lg/subtile"
+authors = ["Eric Kidd <git@randomhacks.net>", "Gwen Lg <me@gwenlg.fr>"]
 keywords = ["subtitle", "library", "parse", "write", "vobsub"]
 categories = ["command-line-utilities", "encoding", "multimedia::encoding", "parser-implementations"]
 license = "LGPL-3.0-or-later"
