@@ -1,3 +1,4 @@
+//! Subtitle Time management
 mod time_point;
 mod time_span;
 
