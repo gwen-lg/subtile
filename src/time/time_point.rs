@@ -51,7 +51,7 @@ impl fmt::Display for TimePoint {
         let t = if self.0 < 0 { -*self } else { *self };
         write!(
             f,
-            "{}{}:{:02}:{:02},{:03}",
+            "{}{:02}:{:02}:{:02},{:03}",
             if self.0 < 0 { "-" } else { "" },
             t.hours(),
             t.mins_comp(),
