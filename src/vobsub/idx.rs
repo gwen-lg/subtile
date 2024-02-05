@@ -25,6 +25,7 @@ pub struct Index {
 
 impl Index {
     /// Open an `*.idx` file and the associated `*.sub` file.
+    #[profiling::function]
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Index, SubError> {
         let path = path.as_ref();
         let mkerr_idx = |source| SubError::Io {
