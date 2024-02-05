@@ -17,14 +17,14 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  code_checks:
+  ci_code_checks_ans_tests:
     runs-on: ubuntu-22.04
     env:
       RUSTFLAGS: "-D warnings"
     strategy:
       fail-fast: false
 
-    name: Code Checks
+    name: Code Checks and Tests
 
     steps:
       - name: "Install dependencies Ubuntu"
