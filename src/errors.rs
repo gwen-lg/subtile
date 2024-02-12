@@ -7,7 +7,7 @@ use std::io;
 use std::path::PathBuf;
 use thiserror::Error;
 
-/// A type representing errors that are specific to `subtitles-utils`. Note that we may
+/// A type representing errors that are specific to `subtile`. Note that we may
 /// normally return `Error`, not `SubError`, which allows to return other
 /// kinds of errors from third-party libraries.
 #[derive(Debug, Error)]

@@ -5,7 +5,7 @@
 //! ## Contributing
 //!
 //! Your feedback and contributions are welcome!  Please see
-//! [FramaGit](https://framagit.org/gwenlg/subtitles-utils) for details.
+//! [Subtile](https://github.com/gwen-lg/subtile) on GitHub for details.
 
 #![warn(missing_docs)]
 // For error-chain.
