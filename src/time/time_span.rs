@@ -1,6 +1,7 @@
 use super::TimePoint;
 
 /// Define a time span with a start time and an end time.
+#[derive(Clone, Copy)]
 pub struct TimeSpan {
     /// Start time of the span
     pub start: TimePoint,
