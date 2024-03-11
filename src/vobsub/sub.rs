@@ -255,6 +255,20 @@ impl Subtitle {
             Rgba([rgb[0], rgb[1], rgb[2], aa])
         })
     }
+
+    /// Set end time of subtitle if missing
+    pub fn sub_fix_end_time(&mut self, next: Option<Self>) {
+        if self.end_time.is_none() {
+            self.end_time = match next {
+                Some(next) => {
+                    let new_end = next.start_time - DEFAULT_SUBTITLE_SPACING;
+                    let alt_end = self.start_time + DEFAULT_SUBTITLE_LENGTH;
+                    Some(new_end.min(alt_end))
+                }
+                None => Some(self.start_time + DEFAULT_SUBTITLE_LENGTH),
+            }
+        }
+    }
 }
 
 impl fmt::Debug for Subtitle {
@@ -525,7 +539,6 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
 /// An iterator over subtitles.
 pub struct Subtitles<'a> {
     internal: SubtitlesInternal<'a>,
-    prev: Option<Subtitle>,
 }
 
 impl<'a> Iterator for Subtitles<'a> {
@@ -538,50 +551,8 @@ impl<'a> Iterator for Subtitles<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         profiling::scope!("Subtitles next");
 
-        // If we don't currently have a previous subtitle, attempt to fetch
-        // one.
-        if self.prev.is_none() {
-            match self.internal.next() {
-                Some(Ok(sub)) => {
-                    self.prev = Some(sub);
-                }
-                other => return other,
-            }
-        }
-        debug_assert!(self.prev.is_some());
-
-        match self.internal.next() {
-            // We have a another subtitle!  We want to return `self.prev`
-            // and store the new subtitle as `self.prev`.
-            Some(Ok(curr)) => {
-                // `unwrap` is safe because of the invariant above.
-                let mut prev = self.prev.take().unwrap();
-                if prev.end_time.is_none() {
-                    // Our subtitle has no end time, so end it just before
-                    // the next subtitle.
-                    let new_end = curr.start_time - DEFAULT_SUBTITLE_SPACING;
-                    let alt_end = prev.start_time + DEFAULT_SUBTITLE_LENGTH;
-                    prev.end_time = Some(new_end.min(alt_end));
-                }
-                self.prev = Some(curr);
-                Some(Ok(prev))
-            }
-            // We encountered an error.  We could, I suppose, attempt to
-            // first return `self.prev` and save the error for next time,
-            // but that's too much trouble.
-            Some(Err(err)) => Some(Err(err)),
-            // The only subtitle left to return is `self.prev`.
-            None => {
-                self.prev.take().map(|mut sub| {
-                    if sub.end_time.is_none() {
-                        // Our subtitle has no end time, and it's the last
-                        // subtitle, so just pick something.
-                        sub.end_time = Some(sub.start_time + DEFAULT_SUBTITLE_LENGTH);
-                    }
-                    Ok(sub)
-                })
-            }
-        }
+        // Attempt to fetch a new subtitle.
+        self.internal.next()
     }
 }
 
@@ -592,7 +563,6 @@ pub const fn subtitles(input: &[u8]) -> Subtitles {
         internal: SubtitlesInternal {
             pes_packets: ps::pes_packets(input),
         },
-        prev: None,
     }
 }
 
