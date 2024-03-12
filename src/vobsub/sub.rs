@@ -470,15 +470,26 @@ macro_rules! try_iter {
 /// An internal iterator over subtitles.  These subtitles may not have a
 /// valid `end_time`, so we'll try to fix them up before letting the user
 /// see them.
-struct SubtitlesInternal<'a> {
+pub struct VobsubParser<'a> {
     pes_packets: ps::PesPackets<'a>,
 }
 
-impl<'a> Iterator for SubtitlesInternal<'a> {
+impl<'a> VobsubParser<'a> {
+    /// To parse a `vobsub` (.sub) file content.
+    /// Return an iterator over the subtitles in this data stream.
+    #[must_use]
+    pub const fn new(input: &'a [u8]) -> Self {
+        Self {
+            pes_packets: ps::pes_packets(input),
+        }
+    }
+}
+
+impl<'a> Iterator for VobsubParser<'a> {
     type Item = Result<Subtitle, VobSubError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        profiling::scope!("SubtitlesInternal next");
+        profiling::scope!("VobsubParser next");
 
         // Get the PES packet containing the first chunk of our subtitle.
         let first: ps::PesPacket = try_iter!(self.pes_packets.next());
@@ -533,36 +544,6 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
 
         // Parse our subtitle buffer.
         Some(subtitle(&sub_packet, base_time))
-    }
-}
-
-/// An iterator over subtitles.
-pub struct Subtitles<'a> {
-    internal: SubtitlesInternal<'a>,
-}
-
-impl<'a> Iterator for Subtitles<'a> {
-    type Item = Result<Subtitle, VobSubError>;
-
-    // This whole routine exists to make sure that `end_time` is set to a
-    // useful value even if the subtitles themselves didn't supply one.
-    // I'm not even sure this is valid, but it has been observed in the
-    // wild.
-    fn next(&mut self) -> Option<Self::Item> {
-        profiling::scope!("Subtitles next");
-
-        // Attempt to fetch a new subtitle.
-        self.internal.next()
-    }
-}
-
-/// Return an iterator over the subtitles in this data stream.
-#[must_use]
-pub const fn subtitles(input: &[u8]) -> Subtitles {
-    Subtitles {
-        internal: SubtitlesInternal {
-            pes_packets: ps::pes_packets(input),
-        },
     }
 }
 
@@ -644,7 +625,7 @@ mod tests {
         let mut f = fs::File::open("./fixtures/example.sub").unwrap();
         let mut buffer = vec![];
         f.read_to_end(&mut buffer).unwrap();
-        let mut subs = subtitles(&buffer);
+        let mut subs = VobsubParser::new(&buffer);
         let sub1 = subs.next().expect("missing sub 1").unwrap();
         assert!(sub1.start_time - 49.4 < 0.1);
         assert!(sub1.end_time.unwrap() - 50.9 < 0.1);

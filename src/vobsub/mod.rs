@@ -71,7 +71,7 @@ pub use self::{
     idx::{read_palette, Index},
     palette::{palette, Palette},
     probe::{is_idx_file, is_sub_file},
-    sub::{subtitles, ErrorMissing, Subtitle, Subtitles},
+    sub::{ErrorMissing, Subtitle},
 };
 
 use crate::content::ContentError;
