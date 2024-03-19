@@ -292,7 +292,7 @@ impl fmt::Debug for Subtitle {
             .field("coordinates", &self.coordinates)
             .field("palette", &self.palette)
             .field("alpha", &self.alpha)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
