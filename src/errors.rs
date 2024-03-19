@@ -66,8 +66,8 @@ impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E>
             }
             IResult::Err(err) => match err {
                 nom::Err::Incomplete(_) => Err(SubError::IncompleteInput),
-                nom::Err::Error(err) => Err(SubError::Parse(format!("{:?}", err))),
-                nom::Err::Failure(err) => Err(SubError::Parse(format!("{:?}", err))),
+                nom::Err::Error(err) => Err(SubError::Parse(format!("{err:?}"))),
+                nom::Err::Failure(err) => Err(SubError::Parse(format!("{err:?}"))),
             },
         }
     }

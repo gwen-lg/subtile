@@ -407,15 +407,11 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
                     return Err(SubError::Parse("incomplete control packet".into()));
                 }
                 nom::Err::Error(err) => {
-                    return Err(SubError::Parse(format!(
-                        "error parsing subtitle: {:?}",
-                        err
-                    )));
+                    return Err(SubError::Parse(format!("error parsing subtitle: {err:?}")));
                 }
                 nom::Err::Failure(err) => {
                     return Err(SubError::Parse(format!(
-                        "Failure parsing subtitle: {:?}",
-                        err
+                        "Failure parsing subtitle: {err:?}"
                     )));
                 }
             },

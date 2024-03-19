@@ -45,7 +45,7 @@ impl fmt::Display for Clock {
         s %= 3600.0;
         let m = (s / 60.0).trunc();
         s %= 60.0;
-        write!(f, "{}:{:02}:{:1.3}", h, m, s)
+        write!(f, "{h}:{m:02}:{s:1.3}")
     }
 }
 

@@ -10,7 +10,7 @@ impl<'a> fmt::Debug for BytesFormatter<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let BytesFormatter(bytes) = *self;
         for byte in bytes.iter().take(16) {
-            write!(f, "{:02x} ", byte)?;
+            write!(f, "{byte:02x} ")?;
         }
         write!(f, "({} bytes)", bytes.len())?;
         Ok(())

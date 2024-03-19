@@ -81,20 +81,17 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize, SubError> {
                 nom::Err::Incomplete(needed) => {
                     return Err(SubError::Image(format!(
                         "not enough bytes parsing subtitle scan \
-                                           line: {:?}",
-                        needed
+                                           line: {needed:?}"
                     )));
                 }
                 nom::Err::Error(err) => {
                     return Err(SubError::Image(format!(
-                        "error parsing subtitle scan line: {:?}",
-                        err
+                        "error parsing subtitle scan line: {err:?}"
                     )));
                 }
                 nom::Err::Failure(err) => {
                     return Err(SubError::Image(format!(
-                        "Failure parsing subtitle scan line: {:?}",
-                        err
+                        "Failure parsing subtitle scan line: {err:?}"
                     )));
                 }
             },
