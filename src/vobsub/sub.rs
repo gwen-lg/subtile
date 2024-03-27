@@ -57,21 +57,25 @@ pub struct Coordinates {
 
 impl Coordinates {
     /// The leftmost edge of the subtitle.
+    #[must_use]
     pub fn left(&self) -> u16 {
         self.x1
     }
 
     /// The rightmost edge of the subtitle.
+    #[must_use]
     pub fn top(&self) -> u16 {
         self.y1
     }
 
     /// The width of the subtitle.
+    #[must_use]
     pub fn width(&self) -> u16 {
         self.x2 + 1 - self.x1
     }
 
     /// The height of the subtitle.
+    #[must_use]
     pub fn height(&self) -> u16 {
         self.y2 + 1 - self.y1
     }
@@ -227,45 +231,53 @@ pub struct Subtitle {
 
 impl Subtitle {
     /// Start time of subtitle, in seconds.
+    #[must_use]
     pub fn start_time(&self) -> f64 {
         self.start_time
     }
 
     /// End time of subtitle, in seconds.  This may be missing from certain
     /// subtitles.
+    #[must_use]
     pub fn end_time(&self) -> f64 {
         self.end_time
             .expect("end time should have been set before returning subtitle")
     }
 
     /// Should this subtitle be shown even when subtitles are off?
+    #[must_use]
     pub fn force(&self) -> bool {
         self.force
     }
 
     /// Coordinates at which to display the subtitle.
+    #[must_use]
     pub fn coordinates(&self) -> &Coordinates {
         &self.coordinates
     }
 
     /// Map each of the 4 colors in this subtitle to a 4-bit palette.
+    #[must_use]
     pub fn palette(&self) -> &[u8; 4] {
         &self.palette
     }
 
     /// Map each of the 4 colors in this subtitle to 4 bits of alpha
     /// channel data.
+    #[must_use]
     pub fn alpha(&self) -> &[u8; 4] {
         &self.alpha
     }
 
     /// Our decompressed image, stored with 2 bits per byte in row-major
     /// order, that can be used as indices into `palette` and `alpha`.
+    #[must_use]
     pub fn raw_image(&self) -> &[u8] {
         &self.raw_image
     }
 
     /// Decompress to subtitle to an RBGA image.
+    #[must_use]
     pub fn to_image(&self, palette: &Palette) -> RgbaImage {
         let width = cast::u32(self.coordinates.width());
         let height = cast::u32(self.coordinates.height());
@@ -616,6 +628,7 @@ impl<'a> Iterator for Subtitles<'a> {
 }
 
 /// Return an iterator over the subtitles in this data stream.
+#[must_use]
 pub fn subtitles(input: &[u8]) -> Subtitles {
     Subtitles {
         internal: SubtitlesInternal {

@@ -7,6 +7,7 @@ pub struct TimePoint(i64);
 
 impl TimePoint {
     /// Create a `TimePoint` from miliseconds
+    #[must_use]
     pub fn from_msecs(time: i64) -> Self {
         Self(time)
     }

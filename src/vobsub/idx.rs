@@ -61,11 +61,13 @@ impl Index {
     }
 
     /// Get the palette associated with this `*.idx` file.
+    #[must_use]
     pub fn palette(&self) -> &Palette {
         &self.palette
     }
 
     /// Iterate over the subtitles associated with this `*.idx` file.
+    #[must_use]
     pub fn subtitles(&self) -> sub::Subtitles {
         sub::subtitles(&self.sub_data)
     }
