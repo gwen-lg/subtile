@@ -12,30 +12,30 @@ impl TimePoint {
         Self(time)
     }
 
-    fn msecs(&self) -> i64 {
+    fn msecs(self) -> i64 {
         self.0
     }
 
-    fn secs(&self) -> i64 {
+    fn secs(self) -> i64 {
         self.0 / 1000
     }
 
-    fn mins(&self) -> i64 {
+    fn mins(self) -> i64 {
         self.0 / (60 * 1000)
     }
 
-    fn hours(&self) -> i64 {
+    fn hours(self) -> i64 {
         self.0 / (60 * 60 * 1000)
     }
-    fn mins_comp(&self) -> i64 {
+    fn mins_comp(self) -> i64 {
         self.mins() % 60
     }
 
-    fn secs_comp(&self) -> i64 {
+    fn secs_comp(self) -> i64 {
         self.secs() % 60
     }
 
-    fn msecs_comp(&self) -> i64 {
+    fn msecs_comp(self) -> i64 {
         self.msecs() % 1000
     }
 }

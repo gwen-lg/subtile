@@ -24,14 +24,14 @@ impl Clock {
 
     /// Return a new `Clock` value, setting the 9-bit extension to the
     /// specified value.
-    pub fn with_ext(&self, ext: u16) -> Clock {
+    pub fn with_ext(self, ext: u16) -> Clock {
         Clock {
             value: self.value & !0x1f | u64::from(ext),
         }
     }
 
     /// Convert a `Clock` value to seconds.
-    pub fn as_seconds(&self) -> f64 {
+    pub fn as_seconds(self) -> f64 {
         let base = (self.value >> 9) as f64;
         let ext = (self.value & 0x1F) as f64;
         (base + ext / 300.0) / 90000.0
