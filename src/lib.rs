@@ -14,6 +14,7 @@
 #![deny(clippy::must_use_candidate)]
 #![deny(clippy::or_fun_call)]
 #![deny(clippy::uninlined_format_args)]
+#![deny(clippy::unreadable_literal)]
 // For error-chain.
 #![recursion_limit = "1024"]
 

@@ -284,7 +284,7 @@ mod tests {
             IResult::Ok((
                 &[][..],
                 Some(PtsDts {
-                    pts: Clock::base(2815200),
+                    pts: Clock::base(2_815_200),
                     dts: None,
                 })
             ))
@@ -321,7 +321,7 @@ mod tests {
                         ..HeaderDataFlags::default()
                     },
                     pts_dts: Some(PtsDts {
-                        pts: Clock::base(2815200),
+                        pts: Clock::base(2_815_200),
                         dts: None,
                     }),
                     ..HeaderData::default()
@@ -348,7 +348,7 @@ mod tests {
                     ..HeaderDataFlags::default()
                 },
                 pts_dts: Some(PtsDts {
-                    pts: Clock::base(2815200),
+                    pts: Clock::base(2_815_200),
                     dts: None,
                 }),
                 ..HeaderData::default()
