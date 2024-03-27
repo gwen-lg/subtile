@@ -8,8 +8,11 @@
 //! [Subtile](https://github.com/gwen-lg/subtile) on GitHub for details.
 
 #![deny(missing_docs)]
+#![deny(clippy::bind_instead_of_map)]
 #![deny(clippy::doc_markdown)]
+#![deny(clippy::missing_fields_in_debug)]
 #![deny(clippy::or_fun_call)]
+#![deny(clippy::uninlined_format_args)]
 // For error-chain.
 #![recursion_limit = "1024"]
 
