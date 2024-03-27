@@ -15,6 +15,7 @@
 #![deny(clippy::must_use_candidate)]
 #![deny(clippy::or_fun_call)]
 #![deny(clippy::trivially_copy_pass_by_ref)]
+#![deny(clippy::match_same_arms)]
 #![deny(clippy::uninlined_format_args)]
 #![deny(clippy::unreadable_literal)]
 // For error-chain.
