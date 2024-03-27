@@ -6,7 +6,7 @@ use std::ops::Neg;
 pub struct TimePoint(i64);
 
 impl TimePoint {
-    /// Create a TimePoint from miliseconds
+    /// Create a `TimePoint` from miliseconds
     pub fn from_msecs(time: i64) -> Self {
         Self(time)
     }

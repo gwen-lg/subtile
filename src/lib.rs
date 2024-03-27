@@ -8,6 +8,7 @@
 //! [Subtile](https://github.com/gwen-lg/subtile) on GitHub for details.
 
 #![deny(missing_docs)]
+#![deny(clippy::doc_markdown)]
 // For error-chain.
 #![recursion_limit = "1024"]
 

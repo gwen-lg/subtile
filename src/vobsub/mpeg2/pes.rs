@@ -106,7 +106,7 @@ fn bool_flag(input: (&[u8], usize)) -> IResult<(&[u8], usize), bool> {
     map(|input| bits::complete::take(1u8)(input), |b: u8| b == 1)(input)
 }
 
-/// Deserialize HeaderDataFlags
+/// Deserialize `HeaderDataFlags`
 fn header_data_flags(input: &[u8]) -> IResult<&[u8], HeaderDataFlags> {
     bits(|input| {
         let (
