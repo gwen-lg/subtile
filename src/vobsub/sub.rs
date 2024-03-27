@@ -375,7 +375,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
                             if c.x2 <= c.x1 || c.y2 <= c.y1 {
                                 return Err(SubError::Parse("invalid bounding box".into()));
                             }
-                            coordinates = coordinates.or(Some(c.clone()));
+                            coordinates = coordinates.or_else(|| Some(c.clone()));
                         }
                         ControlCommand::RleOffsets(r) => {
                             rle_offsets = Some(r);

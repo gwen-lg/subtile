@@ -9,6 +9,7 @@
 
 #![deny(missing_docs)]
 #![deny(clippy::doc_markdown)]
+#![deny(clippy::or_fun_call)]
 // For error-chain.
 #![recursion_limit = "1024"]
 
