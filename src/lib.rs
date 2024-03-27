@@ -10,6 +10,7 @@
 #![deny(missing_docs)]
 #![deny(clippy::bind_instead_of_map)]
 #![deny(clippy::doc_markdown)]
+#![deny(clippy::missing_panics_doc)]
 #![deny(clippy::missing_fields_in_debug)]
 #![deny(clippy::must_use_candidate)]
 #![deny(clippy::or_fun_call)]

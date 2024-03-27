@@ -236,8 +236,11 @@ impl Subtitle {
         self.start_time
     }
 
-    /// End time of subtitle, in seconds.  This may be missing from certain
+    /// End time of subtitle, in seconds. This may be missing from certain
     /// subtitles.
+    /// # Panics
+    /// Will panic if `end_time` is not set. As it should be set before returning subtitle.
+    /// If hapenned `end_time` is called to soon, or a change has broken the intended operation.
     #[must_use]
     pub fn end_time(&self) -> f64 {
         self.end_time
