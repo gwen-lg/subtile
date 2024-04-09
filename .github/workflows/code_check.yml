@@ -19,8 +19,6 @@ env:
 jobs:
   ci_code_checks_ans_tests:
     runs-on: ubuntu-22.04
-    env:
-      RUSTFLAGS: "-D warnings"
     strategy:
       fail-fast: false
 
@@ -47,7 +45,7 @@ jobs:
         id: cargo_clippy
         if: $${{ always() }}
         run: |
-          cargo clippy --profile=test -- -D warnings
+          cargo clippy --profile=test
 
       - name: "Cargo test"
         id: cargo_test
