@@ -19,6 +19,8 @@ env:
 jobs:
   ci_code_checks_and_tests:
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
     strategy:
       fail-fast: false
 
