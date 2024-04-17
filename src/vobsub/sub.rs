@@ -27,7 +27,7 @@ use image::{ImageBuffer, Rgba, RgbaImage};
 
 /// The default time between two adjacent subtitles if no end time is
 /// provided.  This is chosen to be a value that's usually representable in
-/// SRT format, barring rounding errors.
+/// `SRT` format, barring rounding errors.
 const DEFAULT_SUBTITLE_SPACING: f64 = 0.001;
 
 /// The default length of a subtitle if no end time is provided and no
@@ -240,7 +240,7 @@ impl Subtitle {
     /// subtitles.
     /// # Panics
     /// Will panic if `end_time` is not set. As it should be set before returning subtitle.
-    /// If hapenned `end_time` is called to soon, or a change has broken the intended operation.
+    /// If happened `end_time` is called to soon, or a change has broken the intended operation.
     #[must_use]
     pub fn end_time(&self) -> f64 {
         self.end_time

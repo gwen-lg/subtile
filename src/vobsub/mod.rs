@@ -54,7 +54,7 @@
 //!
 //! - Subtitles embedded in DVD-format video.  These should contain the
 //!   same subtitle packet format, but the `*.idx` file is replaced by data
-//!   stored in an IFO file.
+//!   stored in an `IFO` file.
 //! - Subtitles stored in the Matroska container format.  Again, these use
 //!   the same basic subtitle format, but the `*.idx` file is replaced by
 //!   an internal, stripped-down version of the same data in text format.

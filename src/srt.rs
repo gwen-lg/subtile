@@ -1,4 +1,4 @@
-//! SubRip/Srt fonctionnality
+//! SubRip/Srt functionality
 use std::io;
 
 use crate::time::TimeSpan;

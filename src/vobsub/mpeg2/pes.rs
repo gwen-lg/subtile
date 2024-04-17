@@ -153,7 +153,7 @@ pub struct HeaderData {
     pub pts_dts: Option<PtsDts>,
 }
 
-/// Parse PES header data, including the predecing flags and length bytes.
+/// Parse PES header data, including the preceding flags and length bytes.
 fn header_data(input: &[u8]) -> IResult<&[u8], HeaderData> {
     // Grab the flags from our flag byte with header_data_flags.
     let (input, flags) = header_data_flags(input)?;
