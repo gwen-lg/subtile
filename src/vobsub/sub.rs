@@ -178,8 +178,8 @@ pub struct Subtitle {
     end_time: Option<f64>,
     /// Should this subtitle be shown even when subtitles are off?
     force: bool,
-    /// Coordinates at which to display the subtitle.
-    coordinates: Area,
+    /// Area coordinates at which to display the subtitle.
+    area: Area,
     /// Map each of the 4 colors in this subtitle to a 4-bit palette.
     palette: [u8; 4],
     /// Map each of the 4 colors in this subtitle to 4 bits of alpha
@@ -216,8 +216,8 @@ impl Subtitle {
 
     /// Coordinates at which to display the subtitle.
     #[must_use]
-    pub fn coordinates(&self) -> &Area {
-        &self.coordinates
+    pub fn area(&self) -> &Area {
+        &self.area
     }
 
     /// Map each of the 4 colors in this subtitle to a 4-bit palette.
@@ -243,8 +243,8 @@ impl Subtitle {
     /// Decompress to subtitle to an RBGA image.
     #[must_use]
     pub fn to_image(&self, palette: &Palette) -> RgbaImage {
-        let width = cast::u32(self.coordinates.width());
-        let height = cast::u32(self.coordinates.height());
+        let width = cast::u32(self.area.width());
+        let height = cast::u32(self.area.height());
         ImageBuffer::from_fn(width, height, |x, y| {
             let offset = cast::usize(y * width + x);
             // We need to subtract the raw index from 3 to get the same
@@ -279,7 +279,7 @@ impl fmt::Debug for Subtitle {
             .field("start_time", &self.start_time)
             .field("end_time", &self.end_time)
             .field("force", &self.force)
-            .field("coordinates", &self.coordinates)
+            .field("area", &self.area)
             .field("palette", &self.palette)
             .field("alpha", &self.alpha)
             .finish_non_exhaustive()
@@ -403,7 +403,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
     // Make sure we found all the control commands that we expect.
     let start_time =
         start_time.ok_or_else(|| SubError::Parse("no start time for subtitle".into()))?;
-    let coordinates = area.ok_or_else(|| SubError::Parse("no area coordinates for subtitle".into()))?;
+    let area = area.ok_or_else(|| SubError::Parse("no area coordinates for subtitle".into()))?;
     let palette = palette.ok_or_else(|| SubError::Parse("no palette for subtitle".into()))?;
     let alpha = alpha.ok_or_else(|| SubError::Parse("no alpha for subtitle".into()))?;
     let rle_offsets =
@@ -429,7 +429,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
         return Err(SubError::Parse("invalid scan line offsets".into()));
     }
     let image = decompress(
-        coordinates.size(),
+        area.size(),
         [&raw_data[start_0..end], &raw_data[start_1..end]],
     )?;
 
@@ -438,7 +438,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
         start_time,
         end_time,
         force,
-        coordinates,
+        area,
         palette,
         alpha,
         raw_image: image,
@@ -644,7 +644,7 @@ mod tests {
         assert!(sub1.end_time.unwrap() - 50.9 < 0.1);
         assert!(!sub1.force);
         assert_eq!(
-            sub1.coordinates,
+            sub1.area,
             Area::try_from(AreaValues {
                 x1: 750,
                 y1: 916,
