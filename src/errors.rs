@@ -1,8 +1,5 @@
 //! Custom error types.
 
-use nom::IResult;
-use std::default::Default;
-use std::fmt;
 use std::io;
 use std::path::PathBuf;
 use thiserror::Error;
@@ -40,36 +37,4 @@ pub enum SubError {
         /// Path of the file we tried to read
         path: PathBuf,
     },
-}
-
-pub trait IResultExt<I, O, E> {
-    fn ignore_trailing_data(self) -> IResult<I, O, E>;
-    fn to_vobsub_result(self) -> Result<O, SubError>;
-}
-
-impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E> {
-    fn ignore_trailing_data(self) -> IResult<I, O, E> {
-        match self {
-            IResult::Ok((_, val)) => IResult::Ok((I::default(), val)),
-            other => other,
-        }
-    }
-
-    fn to_vobsub_result(self) -> Result<O, SubError> {
-        match self {
-            IResult::Ok((rest, val)) => {
-                if rest == I::default() {
-                    Ok(val)
-                } else {
-                    Err(SubError::UnexpectedInput)
-                }
-            }
-            IResult::Err(err) => match err {
-                nom::Err::Incomplete(_) => Err(SubError::IncompleteInput),
-                nom::Err::Error(err) | nom::Err::Failure(err) => {
-                    Err(SubError::Parse(format!("{err:?}")))
-                }
-            },
-        }
-    }
 }

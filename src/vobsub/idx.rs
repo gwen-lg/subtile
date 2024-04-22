@@ -10,7 +10,8 @@ use std::io::BufReader;
 use std::path::Path;
 
 use super::{palette, sub, Palette};
-use crate::errors::{IResultExt, SubError};
+use crate::errors::SubError;
+use crate::vobsub::IResultExt;
 
 /// A `*.idx` file describing the subtitles in a `*.sub` file.
 #[derive(Debug)]

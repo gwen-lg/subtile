@@ -71,3 +71,47 @@ pub use self::idx::{read_palette, Index};
 pub use self::palette::{palette, Palette};
 pub use self::probe::{is_idx_file, is_sub_file};
 pub use self::sub::{subtitles, Subtitle, Subtitles};
+
+use crate::SubError;
+use core::fmt;
+use nom::IResult;
+
+/// Extend `IResult` management, and convert to [`Result`] with [`Subrror`]
+pub trait IResultExt<I, O, E> {
+    /// Forward IResult after trailing remaining data.
+    /// # Errors
+    /// Forward `Error` and `Failure` from nom.
+    fn ignore_trailing_data(self) -> IResult<I, O, E>;
+    /// Convert an `IResult` to Result<_, `SubError`>
+    /// # Errors
+    /// return `UnexpectedInput` if there is trailing data after parsing.
+    /// Forward `Error` and `Failure` from nom.
+    fn to_vobsub_result(self) -> Result<O, SubError>;
+}
+
+impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E> {
+    fn ignore_trailing_data(self) -> IResult<I, O, E> {
+        match self {
+            IResult::Ok((_, val)) => IResult::Ok((I::default(), val)),
+            other => other,
+        }
+    }
+
+    fn to_vobsub_result(self) -> Result<O, SubError> {
+        match self {
+            IResult::Ok((rest, val)) => {
+                if rest == I::default() {
+                    Ok(val)
+                } else {
+                    Err(SubError::UnexpectedInput)
+                }
+            }
+            IResult::Err(err) => match err {
+                nom::Err::Incomplete(_) => Err(SubError::IncompleteInput),
+                nom::Err::Error(err) | nom::Err::Failure(err) => {
+                    Err(SubError::Parse(format!("{err:?}")))
+                }
+            },
+        }
+    }
+}
