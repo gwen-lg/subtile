@@ -19,10 +19,14 @@ use nom::{
 };
 use std::{cmp::Ordering, fmt};
 
-use super::img::{decompress, Size};
+use super::img::decompress;
 use super::mpeg2::ps;
 use super::Palette;
-use crate::{util::BytesFormatter, SubError};
+use crate::{
+    content::{Area, AreaValues},
+    util::BytesFormatter,
+    SubError,
+};
 use image::{ImageBuffer, Rgba, RgbaImage};
 
 /// The default time between two adjacent subtitles if no end time is
@@ -46,49 +50,6 @@ fn palette_entries(input: &[u8]) -> IResult<&[u8], [u8; 4]> {
     Ok((input, result))
 }
 
-/// Location at which to display the subtitle.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Area {
-    x1: u16,
-    y1: u16,
-    x2: u16,
-    y2: u16,
-}
-
-impl Area {
-    /// The leftmost edge of the subtitle.
-    #[must_use]
-    pub fn left(&self) -> u16 {
-        self.x1
-    }
-
-    /// The rightmost edge of the subtitle.
-    #[must_use]
-    pub fn top(&self) -> u16 {
-        self.y1
-    }
-
-    /// The width of the subtitle.
-    #[must_use]
-    pub fn width(&self) -> u16 {
-        self.x2 + 1 - self.x1
-    }
-
-    /// The height of the subtitle.
-    #[must_use]
-    pub fn height(&self) -> u16 {
-        self.y2 + 1 - self.y1
-    }
-
-    /// The size of the subtitle.
-    fn size(&self) -> Size {
-        Size {
-            w: cast::usize(self.width()),
-            h: cast::usize(self.height()),
-        }
-    }
-}
-
 /// Parse a 12-bit coordinate value.
 fn coordinate(input: (&[u8], usize)) -> IResult<(&[u8], usize), u16> {
     take_bits::<_, _, _, _>(12u8)(input)
@@ -96,11 +57,11 @@ fn coordinate(input: (&[u8], usize)) -> IResult<(&[u8], usize), u16> {
 
 /// Parse four 12-bit coordinate values as a rectangle (with right and
 /// bottom coordinates inclusive).
-fn area(input: &[u8]) -> IResult<&[u8], Area> {
+fn area(input: &[u8]) -> IResult<&[u8], AreaValues> {
     bits(|input| {
         let (input, (x1, x2, y1, y2)) =
             (coordinate, coordinate, coordinate, coordinate).parse(input)?;
-        Ok((input, Area { x1, y1, x2, y2 }))
+        Ok((input, AreaValues { x1, y1, x2, y2 }))
     })(input)
 }
 
@@ -130,7 +91,7 @@ enum ControlCommand<'a> {
     /// channel data.
     Alpha([u8; 4]),
     /// Coordinates at which to display the subtitle.
-    Coordinates(Area),
+    Coordinates(AreaValues),
     /// Offsets of first and second scan line in our data buffer.  Note
     /// that the data buffer stores alternating scan lines separately, so
     /// these are the first line in each of the two chunks.
@@ -395,16 +356,8 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
                             alpha = alpha.or(Some(a));
                         }
                         ControlCommand::Coordinates(c) => {
-                            // Check for weird bounding boxes.  Ideally we
-                            // would do this while parsing, but I can't
-                            // figure out how to get nom to do what I want.
-                            // Later on, we assume that all bounding boxes
-                            // have non-negative width and height and we'll
-                            // crash if they don't.
-                            if c.x2 <= c.x1 || c.y2 <= c.y1 {
-                                return Err(SubError::Parse("invalid bounding box".into()));
-                            }
-                            area = area.or(Some(c));
+                            let cmd_area = Area::try_from(c)?;
+                            area = area.or(Some(cmd_area));
                         }
                         ControlCommand::RleOffsets(r) => {
                             rle_offsets = Some(r);
@@ -450,7 +403,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
     // Make sure we found all the control commands that we expect.
     let start_time =
         start_time.ok_or_else(|| SubError::Parse("no start time for subtitle".into()))?;
-    let coordinates = area.ok_or_else(|| SubError::Parse("no coordinates for subtitle".into()))?;
+    let coordinates = area.ok_or_else(|| SubError::Parse("no area coordinates for subtitle".into()))?;
     let palette = palette.ok_or_else(|| SubError::Parse("no palette for subtitle".into()))?;
     let alpha = alpha.ok_or_else(|| SubError::Parse("no alpha for subtitle".into()))?;
     let rle_offsets =
@@ -633,7 +586,7 @@ mod tests {
                 ControlCommand::StartDate,
                 ControlCommand::Palette([0x0, 0x3, 0x1, 0x0]),
                 ControlCommand::Alpha([0xf, 0xf, 0xf, 0x0]),
-                ControlCommand::Coordinates(Area {
+                ControlCommand::Coordinates(AreaValues {
                     x1: 0x29b,
                     x2: 0x4e6,
                     y1: 0x3c5,
@@ -692,12 +645,13 @@ mod tests {
         assert!(!sub1.force);
         assert_eq!(
             sub1.coordinates,
-            Area {
+            Area::try_from(AreaValues {
                 x1: 750,
                 y1: 916,
                 x2: 1172,
                 y2: 966
-            }
+            })
+            .unwrap()
         );
         assert_eq!(sub1.palette, [0, 3, 1, 0]);
         assert_eq!(sub1.alpha, [15, 15, 15, 0]);

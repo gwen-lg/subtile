@@ -29,6 +29,7 @@
 // For error-chain.
 #![recursion_limit = "1024"]
 
+pub mod content;
 mod errors;
 pub mod srt;
 pub mod time;

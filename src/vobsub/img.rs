@@ -11,16 +11,7 @@ use nom::{
 };
 use safemem::write_bytes;
 
-use crate::{util::BytesFormatter, SubError};
-
-/// The dimensions of an image.
-#[derive(Debug)]
-pub struct Size {
-    /// Width in pixels.
-    pub w: usize,
-    /// Height in pixels.
-    pub h: usize,
-}
+use crate::{content::Size, util::BytesFormatter, SubError};
 
 /// A run-length encoded value.
 #[derive(Debug)]
