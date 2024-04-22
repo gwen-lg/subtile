@@ -377,8 +377,8 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
 
                 // Extract as much data as we can from this control sequence.
                 let time = base_time + f64::from(control.date) / 100.0;
-                for command in &control.commands {
-                    match *command {
+                for command in control.commands {
+                    match command {
                         ControlCommand::Force => {
                             force = true;
                         }
@@ -394,7 +394,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
                         ControlCommand::Alpha(a) => {
                             alpha = alpha.or(Some(a));
                         }
-                        ControlCommand::Coordinates(ref c) => {
+                        ControlCommand::Coordinates(c) => {
                             // Check for weird bounding boxes.  Ideally we
                             // would do this while parsing, but I can't
                             // figure out how to get nom to do what I want.
@@ -404,7 +404,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
                             if c.x2 <= c.x1 || c.y2 <= c.y1 {
                                 return Err(SubError::Parse("invalid bounding box".into()));
                             }
-                            coordinates = coordinates.or_else(|| Some(c.clone()));
+                            coordinates = coordinates.or(Some(c));
                         }
                         ControlCommand::RleOffsets(r) => {
                             rle_offsets = Some(r);
