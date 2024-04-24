@@ -152,13 +152,13 @@ pub enum VobSubError {
     #[error("found subtitle without timing into")]
     MissingTimingForSubtitle,
 
-    /// Missing during subtitle parsing
+    /// Missing data from parsing to construct a subtitle.
     #[error("Missing during subtitle parsing")]
     MissingSubtitleParsing(#[from] ErrorMissing),
 
     /// We could not process a subtitle image.
     #[error("Could not process subtitle image: {0}")]
-    Image(String),
+    Image(#[from] img::Error),
 
     /// Io error on a path.
     #[error("Io error on '{path}'")]

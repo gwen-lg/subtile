@@ -10,9 +10,31 @@ use nom::{
     IResult,
 };
 use safemem::write_bytes;
+use thiserror::Error;
 
-use super::VobSubError;
+use super::IResultExt;
 use crate::{content::Size, util::BytesFormatter};
+
+use super::NomError;
+
+/// Errors of `vobsub` img management.
+#[derive(Error, Debug)]
+pub enum Error {
+    /// If there is more data to write than the space in output.
+    #[error("output parameter is too small (size:{output_size}) for write scanline data (size:{data_size})")]
+    ToSmallOutput {
+        data_size: usize,
+        output_size: usize,
+    },
+
+    /// If index value is bigger than the image width.
+    #[error("Scan line is longer than image width: [{x},{width}]")]
+    ScanLineLongerThanWidth { x: usize, width: usize },
+
+    /// Forward scan line parsind error.
+    #[error("Parsing scan line failed")]
+    ScanLineParsing(#[source] NomError),
+}
 
 /// A run-length encoded value.
 #[derive(Debug)]
@@ -48,49 +70,32 @@ fn rle(input: (&[u8], usize)) -> IResult<(&[u8], usize), Rle> {
 
 /// Decompress the scan-line `input` into `output`, returning the number of
 /// input bytes consumed.
-fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize, VobSubError> {
+fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
     trace!("scan line starting with {:?}", BytesFormatter(input));
     let width = output.len();
     let mut x = 0;
     let mut pos = (input, 0);
     while x < width {
-        match rle(pos) {
-            IResult::Ok((new_pos, run)) => {
-                //trace!("RLE: {:?}", &run);
-                pos = new_pos;
-                let count = if run.cnt == 0 {
-                    width - x
-                } else {
-                    cast::usize(run.cnt)
-                };
-                if x + count > output.len() {
-                    return Err(VobSubError::Image("scan line is too long".into()));
-                }
-                write_bytes(&mut output[x..x + count], run.val);
-                x += count;
-            }
-            IResult::Err(err) => match err {
-                nom::Err::Incomplete(needed) => {
-                    return Err(VobSubError::Image(format!(
-                        "not enough bytes parsing subtitle scan \
-                                           line: {needed:?}"
-                    )));
-                }
-                nom::Err::Error(err) => {
-                    return Err(VobSubError::Image(format!(
-                        "error parsing subtitle scan line: {err:?}"
-                    )));
-                }
-                nom::Err::Failure(err) => {
-                    return Err(VobSubError::Image(format!(
-                        "Failure parsing subtitle scan line: {err:?}"
-                    )));
-                }
-            },
+        let (new_pos, run) = rle(pos).to_result().map_err(Error::ScanLineParsing)?;
+
+        //trace!("RLE: {:?}", &run);
+        pos = new_pos;
+        let count = if run.cnt == 0 {
+            width - x
+        } else {
+            cast::usize(run.cnt)
+        };
+        if x + count > output.len() {
+            return Err(Error::ToSmallOutput {
+                data_size: x + count,
+                output_size: output.len(),
+            });
         }
+        write_bytes(&mut output[x..x + count], run.val);
+        x += count;
     }
     if x > width {
-        return Err(VobSubError::Image("decoded scan line is too long".into()));
+        return Err(Error::ScanLineLongerThanWidth { x, width });
     }
     // Round up to the next full byte.
     if pos.1 > 0 {
@@ -103,7 +108,7 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize, VobSubError> {
 /// order, starting at the upper-left and scanning right and down, with one
 /// byte for each 2-bit value.
 #[profiling::function]
-pub fn decompress(size: Size, data: [&[u8]; 2]) -> Result<Vec<u8>, VobSubError> {
+pub fn decompress(size: Size, data: [&[u8]; 2]) -> Result<Vec<u8>, Error> {
     trace!(
         "decompressing image {:?}, max: [0x{:x}, 0x{:x}]",
         &size,
