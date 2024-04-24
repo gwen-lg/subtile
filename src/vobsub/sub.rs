@@ -28,6 +28,7 @@ use crate::{
     vobsub::IResultExt,
 };
 use image::{ImageBuffer, Rgba, RgbaImage};
+use thiserror::Error;
 
 /// The default time between two adjacent subtitles if no end time is
 /// provided.  This is chosen to be a value that's usually representable in
@@ -282,6 +283,30 @@ fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize), VobSubError> {
     }
 }
 
+/// Errors for missing subtitle part after parsing.
+#[derive(Debug, Error)]
+pub enum ErrorMissing {
+    /// No start time.
+    #[error("no start time")]
+    StartTime,
+
+    /// No area coordinates
+    #[error("no area coordinates")]
+    Area,
+
+    /// No palette
+    #[error("no palette")]
+    Palette,
+
+    /// No alpha palette
+    #[error("no alpha palette")]
+    AlphaPalette,
+
+    /// No RLE offsets
+    #[error("no RLE offsets")]
+    RleOffset,
+}
+
 /// Parse a subtitle.
 fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
     // This parser is somewhat non-standard, because we need to work with
@@ -370,13 +395,11 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
     }
 
     // Make sure we found all the control commands that we expect.
-    let start_time =
-        start_time.ok_or_else(|| VobSubError::Parse("no start time for subtitle".into()))?;
-    let area = area.ok_or_else(|| VobSubError::Parse("no area coordinates for subtitle".into()))?;
-    let palette = palette.ok_or_else(|| VobSubError::Parse("no palette for subtitle".into()))?;
-    let alpha = alpha.ok_or_else(|| VobSubError::Parse("no alpha for subtitle".into()))?;
-    let rle_offsets =
-        rle_offsets.ok_or_else(|| VobSubError::Parse("no RLE offsets for subtitle".into()))?;
+    let start_time = start_time.ok_or(ErrorMissing::StartTime)?;
+    let area = area.ok_or(ErrorMissing::Area)?;
+    let palette = palette.ok_or(ErrorMissing::Palette)?;
+    let alpha = alpha.ok_or(ErrorMissing::AlphaPalette)?;
+    let rle_offsets = rle_offsets.ok_or(ErrorMissing::RleOffset)?;
 
     // Decompress our image.
     //

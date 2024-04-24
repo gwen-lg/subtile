@@ -70,7 +70,7 @@ mod sub;
 pub use self::idx::{read_palette, Index};
 pub use self::palette::{palette, Palette};
 pub use self::probe::{is_idx_file, is_sub_file};
-pub use self::sub::{subtitles, Subtitle, Subtitles};
+pub use self::sub::{subtitles, ErrorMissing, Subtitle, Subtitles};
 
 use crate::content::ContentError;
 use nom::{IResult, Needed};
@@ -151,6 +151,10 @@ pub enum VobSubError {
     /// If timing info for Subtitle is missing.
     #[error("found subtitle without timing into")]
     MissingTimingForSubtitle,
+
+    /// Missing during subtitle parsing
+    #[error("Missing during subtitle parsing")]
+    MissingSubtitleParsing(#[from] ErrorMissing),
 
     /// We could not process a subtitle image.
     #[error("Could not process subtitle image: {0}")]
