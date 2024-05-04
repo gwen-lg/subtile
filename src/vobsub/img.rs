@@ -1,6 +1,6 @@
 //! Run-length encoded image format for subtitles.
 
-use core::fmt;
+use core::fmt::{self, Debug};
 use image::{ImageBuffer, Rgba, RgbaImage};
 use log::trace;
 use nom::{
@@ -12,14 +12,12 @@ use nom::{
 };
 use thiserror::Error;
 
-use super::{IResultExt, Palette};
+use super::{IResultExt, NomError, Palette, VobSubError};
 use crate::{
     content::{Area, Size},
     image::ImageArea,
     util::BytesFormatter,
 };
-
-use super::NomError;
 
 /// Errors of `vobsub` img management.
 #[derive(Error, Debug)]
@@ -38,6 +36,40 @@ pub enum Error {
     /// Forward scan line parsind error.
     #[error("Parsing scan line failed")]
     ScanLineParsing(#[source] NomError),
+}
+
+/// Handle `VobSub` Rle image data in one struct.
+pub struct VobSubRleImageData<'a> {
+    data: [&'a [u8]; 2],
+}
+impl<'a> VobSubRleImageData<'a> {
+    pub fn new(raw_data: &'a [u8], rle_offsets: [u16; 2], end: usize) -> Result<Self, VobSubError> {
+        // We know the starting points of each set of scan lines, but we don't
+        // really know where they end, because encoders like to reuse bytes
+        // that they're already using for something else.  For example, the
+        // last few bytes of the first set of scan lines may overlap with the
+        // first bytes of the second set of scanlines, and the last bytes of
+        // the second set of scan lines may overlap with the start of the
+        // control sequence.  For now, we limit it to the first two bytes of
+        // the control packet, which are usually `[0x00, 0x00]`.  (We might
+        // actually want to remove `end` entirely here and allow the scan lines
+        // to go to the end of the packet, but I've never seen that in
+        // practice.)
+        let start_0 = usize::from(rle_offsets[0]);
+        let start_1 = usize::from(rle_offsets[1]);
+
+        if start_0 > start_1 || start_1 > end {
+            Err(VobSubError::InvalidScanLineOffsets {
+                start_0,
+                start_1,
+                end,
+            })
+        } else {
+            Ok(Self {
+                data: [&raw_data[start_0..end], &raw_data[start_1..end]],
+            })
+        }
+    }
 }
 
 /// A run-length encoded value.
@@ -112,12 +144,12 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
 /// order, starting at the upper-left and scanning right and down, with one
 /// byte for each 2-bit value.
 #[profiling::function]
-pub fn decompress(size: Size, data: [&[u8]; 2]) -> Result<Vec<u8>, Error> {
+pub fn decompress(size: Size, data: VobSubRleImageData) -> Result<Vec<u8>, Error> {
     trace!(
         "decompressing image {:?}, max: [0x{:x}, 0x{:x}]",
         &size,
-        data[0].len(),
-        data[1].len()
+        data.data[0].len(),
+        data.data[1].len()
     );
     let mut img = vec![0; size.w * size.h];
     let mut offsets = [0; 2];
@@ -125,7 +157,7 @@ pub fn decompress(size: Size, data: [&[u8]; 2]) -> Result<Vec<u8>, Error> {
         let odd = y % 2;
         trace!("line {:?}, offset 0x{:x}", y, offsets[odd]);
         let consumed = scan_line(
-            &data[odd][offsets[odd]..],
+            &data.data[odd][offsets[odd]..],
             &mut img[y * size.w..(y + 1) * size.w],
         )?;
         offsets[odd] += consumed;

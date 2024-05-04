@@ -4,6 +4,17 @@
 //!
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
+use super::{
+    decoder::VobSubDecoder,
+    img::{decompress, VobSubIndexedImage},
+    mpeg2::ps,
+    VobSubError,
+};
+use crate::{
+    content::{Area, AreaValues},
+    util::BytesFormatter,
+    vobsub::{img::VobSubRleImageData, IResultExt},
+};
 use log::{trace, warn};
 use nom::{
     bits::{bits, complete::take as take_bits},
@@ -21,13 +32,6 @@ use std::{
     fmt::{self, Debug},
 };
 use thiserror::Error;
-
-use super::{decoder::VobSubDecoder, img::decompress, mpeg2::ps, VobSubError};
-use crate::{
-    content::{Area, AreaValues},
-    util::BytesFormatter,
-    vobsub::{img::VobSubIndexedImage, IResultExt},
-};
 
 /// The default time between two adjacent subtitles if no end time is
 /// provided.  This is chosen to be a value that's usually representable in
@@ -391,33 +395,9 @@ where
     let rle_offsets = rle_offsets.ok_or(ErrorMissing::RleOffset)?;
 
     // Decompress our image.
-    //
-    // We know the starting points of each set of scan lines, but we don't
-    // really know where they end, because encoders like to reuse bytes
-    // that they're already using for something else.  For example, the
-    // last few bytes of the first set of scan lines may overlap with the
-    // first bytes of the second set of scanlines, and the last bytes of
-    // the second set of scan lines may overlap with the start of the
-    // control sequence.  For now, we limit it to the first two bytes of
-    // the control packet, which are usually `[0x00, 0x00]`.  (We might
-    // actually want to remove `end` entirely here and allow the scan lines
-    // to go to the end of the packet, but I've never seen that in
-    // practice.)
-    let start_0 = usize::from(rle_offsets[0]);
-    let start_1 = usize::from(rle_offsets[1]);
     let end = initial_control_offset + 2;
-    if start_0 > start_1 || start_1 > end {
-        return Err(VobSubError::InvalidScanLineOffsets {
-            start_0,
-            start_1,
-            end,
-        });
-    }
-    let image = decompress(
-        area.size(),
-        [&raw_data[start_0..end], &raw_data[start_1..end]],
-    )?;
-
+    let image_data = VobSubRleImageData::new(raw_data, rle_offsets, end)?;
+    let image = decompress(area.size(), image_data)?;
     let indexed_image = VobSubIndexedImage::new(area, palette, alpha, image);
 
     // Return our parsed subtitle.
