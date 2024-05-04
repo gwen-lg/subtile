@@ -1,3 +1,4 @@
+use crate::SubtileError;
 use image::{EncodableLayout, Pixel, PixelWithColorType};
 use std::{
     fs::create_dir_all,
@@ -6,8 +7,6 @@ use std::{
     path::{Path, PathBuf},
 };
 use thiserror::Error;
-
-use crate::SubError;
 
 /// Handle Error for image dump.
 #[derive(Error, Debug)]
@@ -33,7 +32,7 @@ pub enum DumpError {
 
 /// Dump some images in a folder specified by the path.
 #[profiling::function]
-pub fn dump_images<'a, Img, P, Container>(path: &str, images: Img) -> Result<(), SubError>
+pub fn dump_images<'a, Img, P, Container>(path: &str, images: Img) -> Result<(), SubtileError>
 where
     P: Pixel + PixelWithColorType + 'a,
     [P::Subpixel]: EncodableLayout,

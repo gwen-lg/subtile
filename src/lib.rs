@@ -28,4 +28,4 @@ pub mod time;
 mod util;
 pub mod vobsub;
 
-pub use errors::SubError;
+pub use errors::SubtileError;
