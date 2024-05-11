@@ -7,7 +7,7 @@ use nom::{
     IResult,
 };
 
-use crate::SubError;
+use super::VobSubError;
 
 /// Parse a single hexadecimal digit.
 fn from_hex(input: &[u8]) -> std::result::Result<u8, std::num::ParseIntError> {
@@ -40,7 +40,7 @@ pub type Palette = [Rgb<u8>; 16];
 pub fn palette(input: &[u8]) -> IResult<&[u8], Palette> {
     let res = map_res(separated_list0(tag(b", "), hex_rgb), |vec: Vec<Rgb<u8>>| {
         if vec.len() != 16 {
-            return Err(SubError::Parse("Palettes must have 16 entries".into()));
+            return Err(VobSubError::Parse("Palettes must have 16 entries".into()));
         }
         // Coerce vector to known-size slice.  Based on
         // http://stackoverflow.com/q/25428920/12089.

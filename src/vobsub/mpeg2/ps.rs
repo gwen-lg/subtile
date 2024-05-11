@@ -14,7 +14,7 @@ use nom::{
 };
 use std::fmt;
 
-use crate::SubError;
+use crate::vobsub::VobSubError;
 
 use super::clock::{clock_and_ext, Clock};
 use super::pes;
@@ -111,7 +111,7 @@ pub struct PesPackets<'a> {
 }
 
 impl<'a> Iterator for PesPackets<'a> {
-    type Item = Result<PesPacket<'a>, SubError>;
+    type Item = Result<PesPacket<'a>, VobSubError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -139,7 +139,7 @@ impl<'a> Iterator for PesPackets<'a> {
                         nom::Err::Incomplete(needed) => {
                             self.remaining = &[];
                             warn!("Incomplete packet, need: {:?}", needed);
-                            return Some(Err(SubError::Parse("Incomplete PES packet".into())));
+                            return Some(Err(VobSubError::Parse("Incomplete PES packet".into())));
                         }
                         // We got something that looked like a packet but
                         // wasn't parseable.  Log it and keep trying.

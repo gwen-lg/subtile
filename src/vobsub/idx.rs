@@ -9,8 +9,8 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
 
+use super::VobSubError;
 use super::{palette, sub, Palette};
-use crate::errors::SubError;
 use crate::vobsub::IResultExt;
 
 /// A `*.idx` file describing the subtitles in a `*.sub` file.
@@ -27,9 +27,9 @@ pub struct Index {
 impl Index {
     /// Open an `*.idx` file and the associated `*.sub` file.
     #[profiling::function]
-    pub fn open<P: AsRef<Path>>(path: P) -> Result<Index, SubError> {
+    pub fn open<P: AsRef<Path>>(path: P) -> Result<Index, VobSubError> {
         let path = path.as_ref();
-        let mkerr_idx = |source| SubError::Io {
+        let mkerr_idx = |source| VobSubError::Io {
             source,
             path: path.into(),
         };
@@ -42,13 +42,13 @@ impl Index {
         sub_path.set_extension("sub");
 
         let sub_path = sub_path.as_path();
-        let mut sub = fs::File::open(sub_path).map_err(|source| SubError::Io {
+        let mut sub = fs::File::open(sub_path).map_err(|source| VobSubError::Io {
             source,
             path: sub_path.into(),
         })?;
         let mut sub_data = vec![];
         sub.read_to_end(&mut sub_data)
-            .map_err(|source| SubError::Io {
+            .map_err(|source| VobSubError::Io {
                 source,
                 path: sub_path.into(),
             })?;
@@ -77,10 +77,10 @@ impl Index {
 
 /// Read the palette in .idx file content
 #[profiling::function]
-pub fn read_palette<T, Err>(mut input: BufReader<T>, mkerr: &Err) -> Result<Palette, SubError>
+pub fn read_palette<T, Err>(mut input: BufReader<T>, mkerr: &Err) -> Result<Palette, VobSubError>
 where
     T: std::io::Read,
-    Err: Fn(io::Error) -> SubError,
+    Err: Fn(io::Error) -> VobSubError,
 {
     static KEY_VALUE: Lazy<Regex> = Lazy::new(|| Regex::new("^([A-Za-z/ ]+): (.*)").unwrap());
 
@@ -101,7 +101,7 @@ where
         buf.clear();
     }
 
-    let palette = palette_val.ok_or(SubError::MissingKey("palette"))?;
+    let palette = palette_val.ok_or(VobSubError::MissingKey("palette"))?;
     Ok(palette)
 }
 

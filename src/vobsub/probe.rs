@@ -1,15 +1,14 @@
 //! Try to guess the types of files on disk.
 
+use super::VobSubError;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 
-use crate::SubError;
-
 /// Internal helper function which looks for "magic" bytes at the start of
 /// a file.
-fn has_magic(path: &Path, magic: &[u8]) -> Result<bool, SubError> {
-    let mkerr = |source| SubError::Io {
+fn has_magic(path: &Path, magic: &[u8]) -> Result<bool, VobSubError> {
+    let mkerr = |source| VobSubError::Io {
         source,
         path: path.into(),
     };
@@ -24,7 +23,7 @@ fn has_magic(path: &Path, magic: &[u8]) -> Result<bool, SubError> {
 /// # Errors
 ///
 /// Will return `Err` if the file can't be read.
-pub fn is_idx_file<P: AsRef<Path>>(path: P) -> Result<bool, SubError> {
+pub fn is_idx_file<P: AsRef<Path>>(path: P) -> Result<bool, VobSubError> {
     has_magic(path.as_ref(), b"# VobSub index file")
 }
 
@@ -36,7 +35,7 @@ pub fn is_idx_file<P: AsRef<Path>>(path: P) -> Result<bool, SubError> {
 /// # Errors
 ///
 /// Will return `Err` if the file can't be read.
-pub fn is_sub_file<P: AsRef<Path>>(path: P) -> Result<bool, SubError> {
+pub fn is_sub_file<P: AsRef<Path>>(path: P) -> Result<bool, VobSubError> {
     has_magic(path.as_ref(), &[0x00, 0x00, 0x01, 0xba])
 }
 
