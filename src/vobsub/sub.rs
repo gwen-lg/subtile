@@ -319,60 +319,57 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
         }
 
         let control_data = &raw_data[control_offset..];
-        match control_sequence(control_data).to_result() {
-            Ok((_, control)) => {
-                trace!("parsed control sequence: {:?}", &control);
+        let (_, control) = control_sequence(control_data)
+            .to_result()
+            .map_err(|source| SubError::NomParsing(source))?;
 
-                // Extract as much data as we can from this control sequence.
-                let time = base_time + f64::from(control.date) / 100.0;
-                for command in control.commands {
-                    match command {
-                        ControlCommand::Force => {
-                            force = true;
-                        }
-                        ControlCommand::StartDate => {
-                            start_time = start_time.or(Some(time));
-                        }
-                        ControlCommand::StopDate => {
-                            end_time = end_time.or(Some(time));
-                        }
-                        ControlCommand::Palette(p) => {
-                            palette = palette.or(Some(p));
-                        }
-                        ControlCommand::Alpha(a) => {
-                            alpha = alpha.or(Some(a));
-                        }
-                        ControlCommand::Coordinates(c) => {
-                            let cmd_area = Area::try_from(c)?;
-                            area = area.or(Some(cmd_area));
-                        }
-                        ControlCommand::RleOffsets(r) => {
-                            rle_offsets = Some(r);
-                        }
-                        ControlCommand::Unsupported(b) => {
-                            warn!("unsupported control sequence: {:?}", BytesFormatter(b));
-                        }
-                    }
+        trace!("parsed control sequence: {:?}", &control);
+
+        // Extract as much data as we can from this control sequence.
+        let time = base_time + f64::from(control.date) / 100.0;
+        for command in control.commands {
+            match command {
+                ControlCommand::Force => {
+                    force = true;
                 }
-
-                // Figure out where to look for the next control sequence,
-                // if any.
-                let next_control_offset = cast::usize(control.next);
-                match control_offset.cmp(&next_control_offset) {
-                    Ordering::Greater => {
-                        return Err(SubError::Parse("control offset went backwards".into()));
-                    }
-                    Ordering::Equal => {
-                        // This points back at us, so we're the last packet.
-                        break;
-                    }
-                    Ordering::Less => {
-                        control_offset = next_control_offset;
-                    }
+                ControlCommand::StartDate => {
+                    start_time = start_time.or(Some(time));
+                }
+                ControlCommand::StopDate => {
+                    end_time = end_time.or(Some(time));
+                }
+                ControlCommand::Palette(p) => {
+                    palette = palette.or(Some(p));
+                }
+                ControlCommand::Alpha(a) => {
+                    alpha = alpha.or(Some(a));
+                }
+                ControlCommand::Coordinates(c) => {
+                    let cmd_area = Area::try_from(c)?;
+                    area = area.or(Some(cmd_area));
+                }
+                ControlCommand::RleOffsets(r) => {
+                    rle_offsets = Some(r);
+                }
+                ControlCommand::Unsupported(b) => {
+                    warn!("unsupported control sequence: {:?}", BytesFormatter(b));
                 }
             }
-            Err(err) => {
-                return Err(err.into());
+        }
+
+        // Figure out where to look for the next control sequence,
+        // if any.
+        let next_control_offset = cast::usize(control.next);
+        match control_offset.cmp(&next_control_offset) {
+            Ordering::Greater => {
+                return Err(SubError::Parse("control offset went backwards".into()));
+            }
+            Ordering::Equal => {
+                // This points back at us, so we're the last packet.
+                break;
+            }
+            Ordering::Less => {
+                control_offset = next_control_offset;
             }
         }
     }
