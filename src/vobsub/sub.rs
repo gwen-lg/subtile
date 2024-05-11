@@ -321,7 +321,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
         let control_data = &raw_data[control_offset..];
         let (_, control) = control_sequence(control_data)
             .to_result()
-            .map_err(|source| SubError::NomParsing(source))?;
+            .map_err(SubError::NomParsing)?;
 
         trace!("parsed control sequence: {:?}", &control);
 

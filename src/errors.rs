@@ -11,6 +11,10 @@ use crate::vobsub::NomError;
 /// kinds of errors from third-party libraries.
 #[derive(Debug, Error)]
 pub enum SubError {
+    /// Content Error
+    #[error("Error with data")]
+    Content(#[from] crate::content::ContentError),
+
     /// We were unable to find a required key in an `*.idx` file.
     #[error("Could not find required key '{0}'")]
     MissingKey(&'static str),

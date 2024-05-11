@@ -1,5 +1,4 @@
-use super::Size;
-use crate::SubError;
+use super::{ContentError, Size};
 
 /// Location at which to display the subtitle.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -54,7 +53,7 @@ impl Area {
 }
 
 impl TryFrom<AreaValues> for Area {
-    type Error = SubError;
+    type Error = ContentError;
 
     fn try_from(coords_value: AreaValues) -> Result<Self, Self::Error> {
         // Check for weird bounding boxes.  Ideally we
@@ -64,7 +63,7 @@ impl TryFrom<AreaValues> for Area {
         // have non-negative width and height and we'll
         // crash if they don't.
         if coords_value.x2 <= coords_value.x1 || coords_value.y2 <= coords_value.y1 {
-            Err(SubError::Parse("invalid bounding box".into()))
+            Err(ContentError::InvalidAreaBounding)
         } else {
             Ok(Self(coords_value))
         }
