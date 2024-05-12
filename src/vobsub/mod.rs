@@ -100,8 +100,8 @@ pub enum VobSubError {
     #[error("Parsing error.")]
     NomParsing(#[from] NomError),
 
-    /// We could not read a file.
-    #[error("Could not read '{path}'")]
+    /// Io error on a path.
+    #[error("Io error on '{path}'")]
     Io {
         /// Source error
         source: io::Error,
