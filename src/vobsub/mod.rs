@@ -92,6 +92,10 @@ pub enum VobSubError {
     #[error("Could not parse: {0}")]
     Parse(String),
 
+    /// Parsing of palette in idx file failed.
+    #[error("Error during palette pasing from .idx file")]
+    PaletteError(#[source] NomError),
+
     /// We could not process a subtitle image.
     #[error("Could not process subtitle image: {0}")]
     Image(String),

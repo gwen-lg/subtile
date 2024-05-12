@@ -9,9 +9,7 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
 
-use super::VobSubError;
-use super::{palette, sub, Palette};
-use crate::vobsub::IResultExt;
+use super::{palette, sub, IResultExt, Palette, VobSubError};
 
 /// A `*.idx` file describing the subtitles in a `*.sub` file.
 #[derive(Debug)]
@@ -93,7 +91,11 @@ where
             let val = cap.get(2).unwrap().as_str();
             match key {
                 "palette" => {
-                    palette_val = Some(palette(val.as_bytes()).to_result_no_rest()?);
+                    palette_val = Some(
+                        palette(val.as_bytes())
+                            .to_result_no_rest()
+                            .map_err(VobSubError::PaletteError)?,
+                    );
                 }
                 _ => trace!("Unimplemented idx key: {}", key),
             }
