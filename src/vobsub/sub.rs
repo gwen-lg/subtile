@@ -276,9 +276,7 @@ impl fmt::Debug for Subtitle {
 /// because it has an inconvenient error type.
 fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize), VobSubError> {
     if buff.len() < 2 {
-        Err(VobSubError::Parse(
-            "unexpected end of buffer while parsing 16-bit size".into(),
-        ))
+        Err(VobSubError::BufferTooSmallForU16)
     } else {
         Ok((&buff[2..], usize::from(buff[0]) << 8 | usize::from(buff[1])))
     }
@@ -291,7 +289,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
 
     // Figure out where our control data starts.
     if raw_data.len() < 2 {
-        return Err(VobSubError::Parse("unexpected end of subtitle data".into()));
+        return Err(VobSubError::UnexpectedEndOfSubtitleData);
     }
     let (_, initial_control_offset) = parse_be_u16_as_usize(&raw_data[2..])?;
 
@@ -309,18 +307,16 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
     loop {
         trace!("looking for control sequence at: 0x{:x}", control_offset);
         if control_offset >= raw_data.len() {
-            return Err(VobSubError::Parse(format!(
-                "control offset is 0x{:x}, but packet is only 0x{:x} \
-                                   bytes",
-                control_offset,
-                raw_data.len()
-            )));
+            return Err(VobSubError::ControlOffsetBiggerThanPacket {
+                offset: control_offset,
+                packet: raw_data.len(),
+            });
         }
 
         let control_data = &raw_data[control_offset..];
         let (_, control) = control_sequence(control_data)
             .to_result()
-            .map_err(VobSubError::NomParsing)?;
+            .map_err(VobSubError::ControlSequence)?;
 
         trace!("parsed control sequence: {:?}", &control);
 
@@ -361,7 +357,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
         let next_control_offset = cast::usize(control.next);
         match control_offset.cmp(&next_control_offset) {
             Ordering::Greater => {
-                return Err(VobSubError::Parse("control offset went backwards".into()));
+                return Err(VobSubError::ControlOffsetWentBackwards);
             }
             Ordering::Equal => {
                 // This points back at us, so we're the last packet.
@@ -399,7 +395,11 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
     let start_1 = cast::usize(rle_offsets[1]);
     let end = cast::usize(initial_control_offset + 2);
     if start_0 > start_1 || start_1 > end {
-        return Err(VobSubError::Parse("invalid scan line offsets".into()));
+        return Err(VobSubError::InvalidScanLineOffsets {
+            start_0,
+            start_1,
+            end,
+        });
     }
     let image = decompress(
         area.size(),
@@ -452,11 +452,7 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
         // Fetch useful information from our first packet.
         let pts_dts = match first.pes_packet.header_data.pts_dts {
             Some(v) => v,
-            None => {
-                return Some(Err(VobSubError::Parse(
-                    "found subtitle without timing into".into(),
-                )))
-            }
+            None => return Some(Err(VobSubError::MissingTimingForSubtitle)),
         };
         let base_time = pts_dts.pts.as_seconds();
         let substream_id = first.pes_packet.substream_id;
@@ -464,7 +460,7 @@ impl<'a> Iterator for SubtitlesInternal<'a> {
         // Figure out how many total bytes we'll need to collect from one
         // or more PES packets, and collect the first chunk into a buffer.
         if first.pes_packet.data.len() < 2 {
-            return Some(Err(VobSubError::Parse("packet is too short".into())));
+            return Some(Err(VobSubError::PacketTooShort));
         }
         let wanted =
             usize::from(first.pes_packet.data[0]) << 8 | usize::from(first.pes_packet.data[1]);

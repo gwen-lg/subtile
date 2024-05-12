@@ -100,16 +100,61 @@ pub enum VobSubError {
     #[error("Error during palette pasing from .idx file")]
     PaletteError(#[source] NomError),
 
+    /// If Scan line offsets values are not correct.
+    #[error("invalid scan line offsets : start 0 {start_0}, start 1 {start_1}, end {end}")]
+    InvalidScanLineOffsets {
+        /// Start 0
+        start_0: usize,
+        /// Start 1
+        start_1: usize,
+        /// End
+        end: usize,
+    },
+
+    /// If the buffer is too Small for parsing a 16-bits value.
+    #[error("unexpected end of buffer while parsing 16-bit size")]
+    BufferTooSmallForU16,
+
+    /// If the buffer is too small to parse a subtitle.
+    #[error("unexpected end of subtitle data")]
+    UnexpectedEndOfSubtitleData,
+
+    /// If an error happen during `Control sequence` parsing.
+    #[error("Error with Control sequence parsing.")]
+    ControlSequence(#[source] NomError),
+
+    /// If the control offset value tried to leads backwards.
+    #[error("control offset value tried to leads backwards")]
+    ControlOffsetWentBackwards,
+
+    /// If `control offset` is bigger than packet size.
+    #[error("control offset is 0x{offset:x}, but packet is only 0x{packet:x} bytes")]
+    ControlOffsetBiggerThanPacket {
+        /// Control offset
+        offset: usize,
+        /// Packet size
+        packet: usize,
+    },
+
     /// If an error happen during `PES Packet` parsing.
     #[error("PES packet parsing.")]
     PESPacket(#[source] NomError),
+
+    /// If the `control packet` is incmplete
+    #[error("Incomplete control packet")]
+    IncompleteControlPacket,
+
+    /// Packet is too short, not bigger to read his size.
+    #[error("Packet is too short")]
+    PacketTooShort,
+
+    /// If timing info for Subtitle is missing.
+    #[error("found subtitle without timing into")]
+    MissingTimingForSubtitle,
+
     /// We could not process a subtitle image.
     #[error("Could not process subtitle image: {0}")]
     Image(String),
-
-    /// If an error happen during parsing with `nom`.
-    #[error("Parsing error.")]
-    NomParsing(#[from] NomError),
 
     /// Io error on a path.
     #[error("Io error on '{path}'")]
