@@ -93,7 +93,7 @@ where
             let val = cap.get(2).unwrap().as_str();
             match key {
                 "palette" => {
-                    palette_val = Some(palette(val.as_bytes()).to_vobsub_result()?);
+                    palette_val = Some(palette(val.as_bytes()).to_result_no_rest()?);
                 }
                 _ => trace!("Unimplemented idx key: {}", key),
             }

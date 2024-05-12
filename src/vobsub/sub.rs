@@ -25,6 +25,7 @@ use super::Palette;
 use crate::{
     content::{Area, AreaValues},
     util::BytesFormatter,
+    vobsub::IResultExt,
     SubError,
 };
 use image::{ImageBuffer, Rgba, RgbaImage};
@@ -318,8 +319,8 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
         }
 
         let control_data = &raw_data[control_offset..];
-        match control_sequence(control_data) {
-            IResult::Ok((_, control)) => {
+        match control_sequence(control_data).to_result() {
+            Ok((_, control)) => {
                 trace!("parsed control sequence: {:?}", &control);
 
                 // Extract as much data as we can from this control sequence.
@@ -370,19 +371,9 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, SubError> {
                     }
                 }
             }
-            IResult::Err(err) => match err {
-                nom::Err::Incomplete(_) => {
-                    return Err(SubError::Parse("incomplete control packet".into()));
-                }
-                nom::Err::Error(err) => {
-                    return Err(SubError::Parse(format!("error parsing subtitle: {err:?}")));
-                }
-                nom::Err::Failure(err) => {
-                    return Err(SubError::Parse(format!(
-                        "Failure parsing subtitle: {err:?}"
-                    )));
-                }
-            },
+            Err(err) => {
+                return Err(err.into());
+            }
         }
     }
 

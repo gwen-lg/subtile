@@ -72,45 +72,67 @@ pub use self::palette::{palette, Palette};
 pub use self::probe::{is_idx_file, is_sub_file};
 pub use self::sub::{subtitles, Subtitle, Subtitles};
 
-use crate::SubError;
-use core::fmt;
-use nom::IResult;
+use nom::{IResult, Needed};
+use std::fmt;
+use thiserror::Error;
 
-/// Extend `IResult` management, and convert to [`Result`] with [`Subrror`]
+/// Error from `nom` handling
+#[derive(Debug, Error)]
+pub enum NomError {
+    /// We have leftover input that we didn't expect.
+    #[error("Unexpected extra input")]
+    UnexpectedInput,
+
+    /// Our input data ended sooner than we expected.
+    #[error("Incomplete input: '{0:?}' needed.")]
+    IncompleteInput(Needed),
+
+    /// An error happend during parsing
+    #[error("Error from nom : {0}")]
+    Error(String),
+
+    /// And Failure happend during parsing
+    #[error("Failure from nom : {0}")]
+    Failure(String),
+}
+
+/// Extend `IResult` management, and convert to [`Result`] with [`NomError`]
 pub trait IResultExt<I, O, E> {
-    /// Forward IResult after trailing remaining data.
+    /// Convert an `IResult` to Result<_, `NomError`> and check than the buffer is empty after parsing.
+    /// # Errors
+    /// Forward `Error` and `Failure` from nom, and return `UnexpectedInput` if the buffer is not empty after parsing.
+    fn to_result_no_rest(self) -> Result<O, NomError>;
+
+    /// Convert an `IResult` to Result<_, `NomError`>
     /// # Errors
     /// Forward `Error` and `Failure` from nom.
-    fn ignore_trailing_data(self) -> IResult<I, O, E>;
-    /// Convert an `IResult` to Result<_, `SubError`>
-    /// # Errors
-    /// return `UnexpectedInput` if there is trailing data after parsing.
-    /// Forward `Error` and `Failure` from nom.
-    fn to_vobsub_result(self) -> Result<O, SubError>;
+    fn to_result(self) -> Result<(I, O), NomError>;
 }
 
 impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E> {
-    fn ignore_trailing_data(self) -> IResult<I, O, E> {
-        match self {
-            IResult::Ok((_, val)) => IResult::Ok((I::default(), val)),
-            other => other,
-        }
-    }
-
-    fn to_vobsub_result(self) -> Result<O, SubError> {
+    fn to_result_no_rest(self) -> Result<O, NomError> {
         match self {
             IResult::Ok((rest, val)) => {
                 if rest == I::default() {
                     Ok(val)
                 } else {
-                    Err(SubError::UnexpectedInput)
+                    Err(NomError::UnexpectedInput)
                 }
             }
             IResult::Err(err) => match err {
-                nom::Err::Incomplete(_) => Err(SubError::IncompleteInput),
-                nom::Err::Error(err) | nom::Err::Failure(err) => {
-                    Err(SubError::Parse(format!("{err:?}")))
-                }
+                nom::Err::Incomplete(needed) => Err(NomError::IncompleteInput(needed)),
+                nom::Err::Error(err) => Err(NomError::Error(format!("{err:?}"))),
+                nom::Err::Failure(err) => Err(NomError::Failure(format!("{err:?}"))),
+            },
+        }
+    }
+    fn to_result(self) -> Result<(I, O), NomError> {
+        match self {
+            IResult::Ok((rest, val)) => Ok((rest, val)),
+            IResult::Err(err) => match err {
+                nom::Err::Incomplete(needed) => Err(NomError::IncompleteInput(needed)),
+                nom::Err::Error(err) => Err(NomError::Error(format!("{err:?}"))),
+                nom::Err::Failure(err) => Err(NomError::Failure(format!("{err:?}"))),
             },
         }
     }
