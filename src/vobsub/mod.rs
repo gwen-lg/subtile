@@ -100,6 +100,9 @@ pub enum VobSubError {
     #[error("Error during palette pasing from .idx file")]
     PaletteError(#[source] NomError),
 
+    /// If an error happen during `PES Packet` parsing.
+    #[error("PES packet parsing.")]
+    PESPacket(#[source] NomError),
     /// We could not process a subtitle image.
     #[error("Could not process subtitle image: {0}")]
     Image(String),

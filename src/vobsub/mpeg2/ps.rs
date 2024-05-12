@@ -14,7 +14,7 @@ use nom::{
 };
 use std::fmt;
 
-use crate::vobsub::VobSubError;
+use crate::vobsub::{NomError, VobSubError};
 
 use super::clock::{clock_and_ext, Clock};
 use super::pes;
@@ -139,7 +139,9 @@ impl<'a> Iterator for PesPackets<'a> {
                         nom::Err::Incomplete(needed) => {
                             self.remaining = &[];
                             warn!("Incomplete packet, need: {:?}", needed);
-                            return Some(Err(VobSubError::Parse("Incomplete PES packet".into())));
+                            return Some(Err(VobSubError::PESPacket(NomError::IncompleteInput(
+                                needed,
+                            ))));
                         }
                         // We got something that looked like a packet but
                         // wasn't parseable.  Log it and keep trying.
