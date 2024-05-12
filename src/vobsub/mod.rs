@@ -92,6 +92,10 @@ pub enum VobSubError {
     #[error("Could not parse: {0}")]
     Parse(String),
 
+    /// If invalid number of palette entries found.
+    #[error("Palette must have 16 entries, found '{0}' one")]
+    PaletteInvalidEntriesNumbers(usize),
+
     /// Parsing of palette in idx file failed.
     #[error("Error during palette pasing from .idx file")]
     PaletteError(#[source] NomError),
