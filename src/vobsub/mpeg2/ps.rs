@@ -14,10 +14,11 @@ use nom::{
 };
 use std::fmt;
 
+use super::{
+    clock::{clock_and_ext, Clock},
+    pes,
+};
 use crate::vobsub::{NomError, VobSubError};
-
-use super::clock::{clock_and_ext, Clock};
-use super::pes;
 
 /// A parsed [MPEG-2 Program Stream header][MPEG-PS] (MPEG-PS).
 ///

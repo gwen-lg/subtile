@@ -1,10 +1,9 @@
-use std::fmt;
-
 use nom::{
     bits::complete::{tag, take},
     sequence::Tuple,
     IResult,
 };
+use std::fmt;
 
 /// This represents the 90kHz, 33-bit [System Time Clock][STC] (STC) and
 /// the 9-bit STC extension value, which represents 1/300th of a tick.

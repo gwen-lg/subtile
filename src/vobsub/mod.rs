@@ -67,10 +67,12 @@ mod palette;
 mod probe;
 mod sub;
 
-pub use self::idx::{read_palette, Index};
-pub use self::palette::{palette, Palette};
-pub use self::probe::{is_idx_file, is_sub_file};
-pub use self::sub::{subtitles, ErrorMissing, Subtitle, Subtitles};
+pub use self::{
+    idx::{read_palette, Index},
+    palette::{palette, Palette},
+    probe::{is_idx_file, is_sub_file},
+    sub::{subtitles, ErrorMissing, Subtitle, Subtitles},
+};
 
 use crate::content::ContentError;
 use nom::{IResult, Needed};

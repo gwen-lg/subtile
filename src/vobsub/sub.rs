@@ -5,6 +5,7 @@
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
 use cast;
+use image::{ImageBuffer, Rgba, RgbaImage};
 use log::{trace, warn};
 use nom::{
     bits::{bits, complete::take as take_bits},
@@ -18,17 +19,14 @@ use nom::{
     IResult,
 };
 use std::{cmp::Ordering, fmt};
+use thiserror::Error;
 
-use super::mpeg2::ps;
-use super::Palette;
-use super::{img::decompress, VobSubError};
+use super::{img::decompress, mpeg2::ps, Palette, VobSubError};
 use crate::{
     content::{Area, AreaValues},
     util::BytesFormatter,
     vobsub::IResultExt,
 };
-use image::{ImageBuffer, Rgba, RgbaImage};
-use thiserror::Error;
 
 /// The default time between two adjacent subtitles if no end time is
 /// provided.  This is chosen to be a value that's usually representable in

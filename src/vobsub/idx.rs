@@ -3,11 +3,11 @@
 use log::trace;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use std::fs;
-use std::io;
-use std::io::prelude::*;
-use std::io::BufReader;
-use std::path::Path;
+use std::{
+    fs,
+    io::{self, prelude::*, BufReader},
+    path::Path,
+};
 
 use super::{palette, sub, IResultExt, Palette, VobSubError};
 
