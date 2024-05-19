@@ -25,6 +25,7 @@
 #![deny(clippy::or_fun_call)]
 #![deny(clippy::trivially_copy_pass_by_ref)]
 #![deny(clippy::uninlined_format_args)]
+#![deny(clippy::use_self)]
 #![deny(clippy::unreadable_literal)]
 #![deny(clippy::useless_conversion)]
 // For error-chain.

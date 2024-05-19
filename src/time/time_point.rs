@@ -47,9 +47,9 @@ impl TimePoint {
 }
 
 impl Neg for TimePoint {
-    type Output = TimePoint;
-    fn neg(self) -> TimePoint {
-        TimePoint(-self.0)
+    type Output = Self;
+    fn neg(self) -> Self {
+        Self(-self.0)
     }
 }
 

@@ -208,14 +208,14 @@ pub trait IResultExt<I, O, E> {
 impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E> {
     fn to_result_no_rest(self) -> Result<O, NomError> {
         match self {
-            IResult::Ok((rest, val)) => {
+            Self::Ok((rest, val)) => {
                 if rest == I::default() {
                     Ok(val)
                 } else {
                     Err(NomError::UnexpectedInput)
                 }
             }
-            IResult::Err(err) => match err {
+            Self::Err(err) => match err {
                 nom::Err::Incomplete(needed) => Err(NomError::IncompleteInput(needed)),
                 nom::Err::Error(err) => Err(NomError::Error(format!("{err:?}"))),
                 nom::Err::Failure(err) => Err(NomError::Failure(format!("{err:?}"))),
@@ -224,8 +224,8 @@ impl<I: Default + Eq, O, E: fmt::Debug> IResultExt<I, O, E> for IResult<I, O, E>
     }
     fn to_result(self) -> Result<(I, O), NomError> {
         match self {
-            IResult::Ok((rest, val)) => Ok((rest, val)),
-            IResult::Err(err) => match err {
+            Self::Ok((rest, val)) => Ok((rest, val)),
+            Self::Err(err) => match err {
                 nom::Err::Incomplete(needed) => Err(NomError::IncompleteInput(needed)),
                 nom::Err::Error(err) => Err(NomError::Error(format!("{err:?}"))),
                 nom::Err::Failure(err) => Err(NomError::Failure(format!("{err:?}"))),

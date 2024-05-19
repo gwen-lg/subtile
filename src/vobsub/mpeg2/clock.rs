@@ -17,14 +17,14 @@ pub struct Clock {
 impl Clock {
     /// Given a 33-bit System Time Clock value, construct a new `Clock`
     /// value.
-    pub const fn base(stc: u64) -> Clock {
-        Clock { value: stc << 9 }
+    pub const fn base(stc: u64) -> Self {
+        Self { value: stc << 9 }
     }
 
     /// Return a new `Clock` value, setting the 9-bit extension to the
     /// specified value.
-    pub fn with_ext(self, ext: u16) -> Clock {
-        Clock {
+    pub fn with_ext(self, ext: u16) -> Self {
+        Self {
             value: self.value & !0x1f | u64::from(ext),
         }
     }

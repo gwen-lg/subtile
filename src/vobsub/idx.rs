@@ -25,7 +25,7 @@ pub struct Index {
 impl Index {
     /// Open an `*.idx` file and the associated `*.sub` file.
     #[profiling::function]
-    pub fn open<P: AsRef<Path>>(path: P) -> Result<Index, VobSubError> {
+    pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, VobSubError> {
         let path = path.as_ref();
         let mkerr_idx = |source| VobSubError::Io {
             source,
@@ -51,13 +51,13 @@ impl Index {
                 path: sub_path.into(),
             })?;
 
-        Ok(Index { palette, sub_data })
+        Ok(Self { palette, sub_data })
     }
 
     /// Create an Index from a palette and sub data
     #[must_use]
-    pub fn init(palette: Palette, sub_data: Vec<u8>) -> Index {
-        Index { palette, sub_data }
+    pub fn init(palette: Palette, sub_data: Vec<u8>) -> Self {
+        Self { palette, sub_data }
     }
 
     /// Get the palette associated with this `*.idx` file.
