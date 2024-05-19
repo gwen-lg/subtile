@@ -8,10 +8,11 @@ use crate::time::TimeSpan;
 ///
 /// Will return `Err` if write in `writer` return an `Err`.
 pub fn write_srt(
-    data: &[(TimeSpan, String)],
     writer: &mut impl io::Write,
+    subtitles: &[(TimeSpan, String)],
 ) -> Result<(), io::Error> {
-    data.iter()
+    subtitles
+        .iter()
         .enumerate()
         .try_for_each(write_srt_line(writer))?;
 
