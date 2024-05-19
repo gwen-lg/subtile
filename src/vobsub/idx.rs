@@ -62,7 +62,7 @@ impl Index {
 
     /// Get the palette associated with this `*.idx` file.
     #[must_use]
-    pub fn palette(&self) -> &Palette {
+    pub const fn palette(&self) -> &Palette {
         &self.palette
     }
 

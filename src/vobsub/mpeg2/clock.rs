@@ -17,7 +17,7 @@ pub struct Clock {
 impl Clock {
     /// Given a 33-bit System Time Clock value, construct a new `Clock`
     /// value.
-    pub fn base(stc: u64) -> Clock {
+    pub const fn base(stc: u64) -> Clock {
         Clock { value: stc << 9 }
     }
 

@@ -170,6 +170,6 @@ impl<'a> Iterator for PesPackets<'a> {
 
 /// Iterate over all the PES packets in an MPEG-2 Program Stream (or at
 /// least those which contain subtitles).
-pub fn pes_packets(input: &[u8]) -> PesPackets {
+pub const fn pes_packets(input: &[u8]) -> PesPackets {
     PesPackets { remaining: input }
 }

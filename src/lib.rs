@@ -17,6 +17,7 @@
 #![deny(clippy::extra_unused_lifetimes)]
 #![deny(clippy::if_not_else)]
 #![deny(clippy::match_same_arms)]
+#![deny(clippy::missing_const_for_fn)]
 #![deny(clippy::missing_errors_doc)]
 #![deny(clippy::missing_fields_in_debug)]
 #![deny(clippy::missing_panics_doc)]

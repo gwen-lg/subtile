@@ -20,25 +20,25 @@ pub struct Area(AreaValues);
 impl Area {
     /// The leftmost edge of the subtitle.
     #[must_use]
-    pub fn left(&self) -> u16 {
+    pub const fn left(&self) -> u16 {
         self.0.x1
     }
 
     /// The rightmost edge of the subtitle.
     #[must_use]
-    pub fn top(&self) -> u16 {
+    pub const fn top(&self) -> u16 {
         self.0.y1
     }
 
     /// The width of the subtitle.
     #[must_use]
-    pub fn width(&self) -> u16 {
+    pub const fn width(&self) -> u16 {
         self.0.x2 + 1 - self.0.x1
     }
 
     /// The height of the subtitle.
     #[must_use]
-    pub fn height(&self) -> u16 {
+    pub const fn height(&self) -> u16 {
         self.0.y2 + 1 - self.0.y1
     }
 

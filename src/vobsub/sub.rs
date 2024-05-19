@@ -192,7 +192,7 @@ pub struct Subtitle {
 impl Subtitle {
     /// Start time of subtitle, in seconds.
     #[must_use]
-    pub fn start_time(&self) -> f64 {
+    pub const fn start_time(&self) -> f64 {
         self.start_time
     }
 
@@ -209,26 +209,26 @@ impl Subtitle {
 
     /// Should this subtitle be shown even when subtitles are off?
     #[must_use]
-    pub fn force(&self) -> bool {
+    pub const fn force(&self) -> bool {
         self.force
     }
 
     /// Coordinates at which to display the subtitle.
     #[must_use]
-    pub fn area(&self) -> &Area {
+    pub const fn area(&self) -> &Area {
         &self.area
     }
 
     /// Map each of the 4 colors in this subtitle to a 4-bit palette.
     #[must_use]
-    pub fn palette(&self) -> &[u8; 4] {
+    pub const fn palette(&self) -> &[u8; 4] {
         &self.palette
     }
 
     /// Map each of the 4 colors in this subtitle to 4 bits of alpha
     /// channel data.
     #[must_use]
-    pub fn alpha(&self) -> &[u8; 4] {
+    pub const fn alpha(&self) -> &[u8; 4] {
         &self.alpha
     }
 
@@ -588,7 +588,7 @@ impl<'a> Iterator for Subtitles<'a> {
 
 /// Return an iterator over the subtitles in this data stream.
 #[must_use]
-pub fn subtitles(input: &[u8]) -> Subtitles {
+pub const fn subtitles(input: &[u8]) -> Subtitles {
     Subtitles {
         internal: SubtitlesInternal {
             pes_packets: ps::pes_packets(input),

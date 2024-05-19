@@ -8,7 +8,7 @@ pub struct TimePoint(i64);
 impl TimePoint {
     /// Create a `TimePoint` from miliseconds
     #[must_use]
-    pub fn from_msecs(time: i64) -> Self {
+    pub const fn from_msecs(time: i64) -> Self {
         Self(time)
     }
 
@@ -18,30 +18,30 @@ impl TimePoint {
         self.0 as f64 / 1000.
     }
 
-    fn msecs(self) -> i64 {
+    const fn msecs(self) -> i64 {
         self.0
     }
 
-    fn secs(self) -> i64 {
+    const fn secs(self) -> i64 {
         self.0 / 1000
     }
 
-    fn mins(self) -> i64 {
+    const fn mins(self) -> i64 {
         self.0 / (60 * 1000)
     }
 
-    fn hours(self) -> i64 {
+    const fn hours(self) -> i64 {
         self.0 / (60 * 60 * 1000)
     }
-    fn mins_comp(self) -> i64 {
+    const fn mins_comp(self) -> i64 {
         self.mins() % 60
     }
 
-    fn secs_comp(self) -> i64 {
+    const fn secs_comp(self) -> i64 {
         self.secs() % 60
     }
 
-    fn msecs_comp(self) -> i64 {
+    const fn msecs_comp(self) -> i64 {
         self.msecs() % 1000
     }
 }

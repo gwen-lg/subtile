@@ -13,7 +13,7 @@ pub struct TimeSpan {
 impl TimeSpan {
     /// Create a new `TimeSpan` from a start and an end.
     #[must_use]
-    pub fn new(start: TimePoint, end: TimePoint) -> Self {
+    pub const fn new(start: TimePoint, end: TimePoint) -> Self {
         Self { start, end }
     }
 }
