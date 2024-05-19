@@ -2,7 +2,7 @@ use super::TimePoint;
 use core::fmt::{self, Debug};
 
 /// Define a time span with a start time and an end time.
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct TimeSpan {
     /// Start time of the span
     pub start: TimePoint,

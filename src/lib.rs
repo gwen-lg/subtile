@@ -13,6 +13,7 @@
 #![deny(clippy::borrowed_box)]
 #![deny(clippy::cast_lossless)]
 #![deny(clippy::clone_on_copy)]
+#![deny(clippy::derive_partial_eq_without_eq)]
 #![deny(clippy::doc_markdown)]
 #![deny(clippy::extra_unused_lifetimes)]
 #![deny(clippy::if_not_else)]
