@@ -1,7 +1,8 @@
 use super::TimePoint;
+use core::fmt::{self, Debug};
 
 /// Define a time span with a start time and an end time.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct TimeSpan {
     /// Start time of the span
     pub start: TimePoint,
@@ -14,5 +15,11 @@ impl TimeSpan {
     #[must_use]
     pub fn new(start: TimePoint, end: TimePoint) -> Self {
         Self { start, end }
+    }
+}
+
+impl Debug for TimeSpan {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} --> {}", self.start, self.end)
     }
 }
