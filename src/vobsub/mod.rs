@@ -60,6 +60,7 @@
 //!   an internal, stripped-down version of the same data in text format.
 //!
 
+mod decoder;
 mod idx;
 mod img;
 mod mpeg2;
