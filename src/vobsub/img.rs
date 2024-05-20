@@ -18,6 +18,7 @@ use thiserror::Error;
 use super::{IResultExt, Palette};
 use crate::{
     content::{Area, Size},
+    image::ImageSize,
     util::BytesFormatter,
 };
 
@@ -214,5 +215,14 @@ impl fmt::Debug for VobSubIndexedImage {
             .field("palette", &self.palette)
             .field("alpha", &self.alpha)
             .finish_non_exhaustive()
+    }
+}
+
+impl ImageSize for VobSubIndexedImage {
+    fn width(&self) -> u32 {
+        u32::from(self.area.width())
+    }
+    fn height(&self) -> u32 {
+        u32::from(self.area.height())
     }
 }
