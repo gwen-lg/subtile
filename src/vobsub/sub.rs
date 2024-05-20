@@ -18,7 +18,10 @@ use nom::{
     sequence::{preceded, Tuple},
     IResult,
 };
-use std::{cmp::Ordering, fmt};
+use std::{
+    cmp::Ordering,
+    fmt::{self, Debug},
+};
 use thiserror::Error;
 
 use super::{img::decompress, mpeg2::ps, Palette, VobSubError};
@@ -295,6 +298,45 @@ fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize), VobSubError> {
     }
 }
 
+trait SubDecoder {
+    type Output;
+
+    fn from_data(
+        start_time: f64,
+        end_time: Option<f64>,
+        force: bool,
+        area: Area,
+        palette: [u8; 4],
+        alpha: [u8; 4],
+        raw_image: Vec<u8>,
+    ) -> Self::Output;
+}
+//struct VobSubFullDecoder;
+
+impl SubDecoder for Subtitle {
+    type Output = Self;
+
+    fn from_data(
+        start_time: f64,
+        end_time: Option<f64>,
+        force: bool,
+        area: Area,
+        palette: [u8; 4],
+        alpha: [u8; 4],
+        raw_image: Vec<u8>,
+    ) -> Self::Output {
+        Self {
+            start_time,
+            end_time,
+            force,
+            area,
+            palette,
+            alpha,
+            raw_image,
+        }
+    }
+}
+
 /// Errors for missing subtitle part after parsing.
 #[derive(Debug, Error)]
 pub enum ErrorMissing {
@@ -320,7 +362,11 @@ pub enum ErrorMissing {
 }
 
 /// Parse a subtitle.
-fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
+fn subtitle<D, T>(raw_data: &[u8], base_time: f64) -> Result<T, VobSubError>
+where
+    T: Debug,
+    D: SubDecoder<Output = T>,
+{
     // This parser is somewhat non-standard, because we need to work with
     // explicit offsets into `packet` in several places.
 
@@ -442,15 +488,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
     )?;
 
     // Return our parsed subtitle.
-    let result = Subtitle {
-        start_time,
-        end_time,
-        force,
-        area,
-        palette,
-        alpha,
-        raw_image: image,
-    };
+    let result = D::from_data(start_time, end_time, force, area, palette, alpha, image);
     trace!("Parsed subtitle: {:?}", &result);
     Ok(result)
 }
@@ -544,7 +582,7 @@ impl<'a> Iterator for VobsubParser<'a> {
         }
 
         // Parse our subtitle buffer.
-        Some(subtitle(&sub_packet, base_time))
+        Some(subtitle::<Subtitle, _>(&sub_packet, base_time))
     }
 }
 
