@@ -1,5 +1,7 @@
 //! Run-length encoded image format for subtitles.
 
+use core::fmt;
+use image::{ImageBuffer, Rgba, RgbaImage};
 use log::trace;
 use nom::{
     bits::complete::{tag as tag_bits, take as take_bits},
@@ -10,8 +12,11 @@ use nom::{
 };
 use thiserror::Error;
 
-use super::IResultExt;
-use crate::{content::Size, util::BytesFormatter};
+use super::{IResultExt, Palette};
+use crate::{
+    content::{Area, Size},
+    util::BytesFormatter,
+};
 
 use super::NomError;
 
@@ -126,4 +131,85 @@ pub fn decompress(size: Size, data: [&[u8]; 2]) -> Result<Vec<u8>, Error> {
     }
     // TODO: Warn if we didn't consume everything.
     Ok(img)
+}
+
+/// Manage image data from `VobSub` file.
+#[derive(Clone, PartialEq, Eq)]
+pub struct VobSubIndexedImage {
+    /// Coordinates at which to display the subtitle.
+    area: Area,
+    /// Map each of the 4 colors in this subtitle to a 4-bit palette.
+    palette: [u8; 4],
+    /// Map each of the 4 colors in this subtitle to 4 bits of alpha
+    /// channel data.
+    ///  TODO: encapsulate in dedicated type for avoiding error with palette
+    alpha: [u8; 4],
+    /// Our decompressed image, stored with 2 bits per byte in row-major
+    /// order, that can be used as indices into `palette` and `alpha`.
+    raw_image: Vec<u8>,
+}
+impl VobSubIndexedImage {
+    /// Create a new `VobSubImage`
+    #[must_use]
+    pub fn new(area: Area, palette: [u8; 4], alpha: [u8; 4], raw_image: Vec<u8>) -> Self {
+        Self {
+            area,
+            palette,
+            alpha,
+            raw_image,
+        }
+    }
+
+    /// Access to coordinates data
+    #[must_use]
+    pub const fn area(&self) -> &Area {
+        &self.area
+    }
+
+    /// Access to palette data
+    #[must_use]
+    pub const fn palette(&self) -> &[u8; 4] {
+        &self.palette
+    }
+
+    /// Access to alpha data
+    #[must_use]
+    pub const fn alpha(&self) -> &[u8; 4] {
+        &self.alpha
+    }
+
+    /// Access to pixel raw data of the image
+    #[must_use]
+    pub fn raw_image(&self) -> &[u8] {
+        self.raw_image.as_slice()
+    }
+
+    /// Decompress to subtitle to an RBGA image.
+    /// WIP: replace by more generic
+    #[must_use]
+    pub fn to_image(&self, palette: &Palette) -> RgbaImage {
+        let width = u32::from(self.area.width());
+        let height = u32::from(self.area.height());
+        ImageBuffer::from_fn(width, height, |x, y| {
+            let offset = cast::usize(y * width + x);
+            // We need to subtract the raw index from 3 to get the same
+            // results as everybody else.  I found this by inspecting the
+            // Handbrake subtitle decoding routines.
+            let px = usize::from(3 - self.raw_image[offset]);
+            let rgb = palette[usize::from(self.palette[px])].0;
+            let a = self.alpha[px];
+            let aa = a << 4 | a;
+            Rgba([rgb[0], rgb[1], rgb[2], aa])
+        })
+    }
+}
+
+impl fmt::Debug for VobSubIndexedImage {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("VobSub Image")
+            .field("area", &self.area)
+            .field("palette", &self.palette)
+            .field("alpha", &self.alpha)
+            .finish_non_exhaustive()
+    }
 }

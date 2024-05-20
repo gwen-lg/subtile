@@ -13,10 +13,11 @@
 //!     let sub = sub.unwrap();
 //!     println!("Time: {:0.3}-{:0.3}", sub.start_time(), sub.end_time());
 //!     println!("Always show: {:?}", sub.force());
-//!     let area = sub.area();
+//!     let raw_img = sub.raw_image();
+//!     let area = raw_img.area();
 //!     println!("At: {}, {}", area.left(), area.top());
 //!     println!("Size: {}x{}", area.width(), area.height());
-//!     let img: image::RgbaImage = sub.to_image(idx.palette());
+//!     let img: image::RgbaImage = raw_img.to_image(idx.palette());
 //!
 //!     // You can save or manipulate `img` using the APIs provided by the Rust
 //!     // `image` crate.
@@ -70,6 +71,7 @@ mod sub;
 
 pub use self::{
     idx::{read_palette, Index},
+    img::VobSubIndexedImage,
     palette::{palette, Palette},
     probe::{is_idx_file, is_sub_file},
     sub::{ErrorMissing, Subtitle},

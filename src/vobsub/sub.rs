@@ -4,7 +4,6 @@
 //!
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
-use image::{ImageBuffer, Rgba, RgbaImage};
 use log::{trace, warn};
 use nom::{
     bits::{bits, complete::take as take_bits},
@@ -23,11 +22,11 @@ use std::{
 };
 use thiserror::Error;
 
-use super::{decoder::VobSubDecoder, img::decompress, mpeg2::ps, Palette, VobSubError};
+use super::{decoder::VobSubDecoder, img::decompress, mpeg2::ps, VobSubError};
 use crate::{
     content::{Area, AreaValues},
     util::BytesFormatter,
-    vobsub::IResultExt,
+    vobsub::{img::VobSubIndexedImage, IResultExt},
 };
 
 /// The default time between two adjacent subtitles if no end time is
@@ -179,16 +178,8 @@ pub struct Subtitle {
     end_time: Option<f64>,
     /// Should this subtitle be shown even when subtitles are off?
     force: bool,
-    /// Area coordinates at which to display the subtitle.
-    area: Area,
-    /// Map each of the 4 colors in this subtitle to a 4-bit palette.
-    palette: [u8; 4],
-    /// Map each of the 4 colors in this subtitle to 4 bits of alpha
-    /// channel data.
-    alpha: [u8; 4],
-    /// Our decompressed image, stored with 2 bits per byte in row-major
-    /// order, that can be used as indices into `palette` and `alpha`.
-    raw_image: Vec<u8>,
+    /// decompressed `VobSub` image data.
+    image: VobSubIndexedImage,
 }
 
 impl Subtitle {
@@ -215,48 +206,11 @@ impl Subtitle {
         self.force
     }
 
-    /// Coordinates at which to display the subtitle.
-    #[must_use]
-    pub const fn area(&self) -> &Area {
-        &self.area
-    }
-
-    /// Map each of the 4 colors in this subtitle to a 4-bit palette.
-    #[must_use]
-    pub const fn palette(&self) -> &[u8; 4] {
-        &self.palette
-    }
-
-    /// Map each of the 4 colors in this subtitle to 4 bits of alpha
-    /// channel data.
-    #[must_use]
-    pub const fn alpha(&self) -> &[u8; 4] {
-        &self.alpha
-    }
-
     /// Our decompressed image, stored with 2 bits per byte in row-major
     /// order, that can be used as indices into `palette` and `alpha`.
     #[must_use]
-    pub fn raw_image(&self) -> &[u8] {
-        &self.raw_image
-    }
-
-    /// Decompress to subtitle to an RBGA image.
-    #[must_use]
-    pub fn to_image(&self, palette: &Palette) -> RgbaImage {
-        let width = u32::from(self.area.width());
-        let height = u32::from(self.area.height());
-        ImageBuffer::from_fn(width, height, |x, y| {
-            let offset = cast::usize(y * width + x);
-            // We need to subtract the raw index from 3 to get the same
-            // results as everybody else.  I found this by inspecting the
-            // Handbrake subtitle decoding routines.
-            let px = usize::from(3 - self.raw_image[offset]);
-            let rgb = palette[usize::from(self.palette[px])].0;
-            let a = self.alpha[px];
-            let aa = a << 4 | a;
-            Rgba([rgb[0], rgb[1], rgb[2], aa])
-        })
+    pub const fn raw_image(&self) -> &VobSubIndexedImage {
+        &self.image
     }
 
     /// Set end time of subtitle if missing
@@ -280,9 +234,7 @@ impl fmt::Debug for Subtitle {
             .field("start_time", &self.start_time)
             .field("end_time", &self.end_time)
             .field("force", &self.force)
-            .field("area", &self.area)
-            .field("palette", &self.palette)
-            .field("alpha", &self.alpha)
+            .field("image", &self.image)
             .finish_non_exhaustive()
     }
 }
@@ -305,19 +257,13 @@ impl VobSubDecoder for Subtitle {
         start_time: f64,
         end_time: Option<f64>,
         force: bool,
-        area: Area,
-        palette: [u8; 4],
-        alpha: [u8; 4],
-        raw_image: Vec<u8>,
+        image: VobSubIndexedImage,
     ) -> Self::Output {
         Self {
             start_time,
             end_time,
             force,
-            area,
-            palette,
-            alpha,
-            raw_image,
+            image,
         }
     }
 }
@@ -472,8 +418,10 @@ where
         [&raw_data[start_0..end], &raw_data[start_1..end]],
     )?;
 
+    let indexed_image = VobSubIndexedImage::new(area, palette, alpha, image);
+
     // Return our parsed subtitle.
-    let result = D::from_data(start_time, end_time, force, area, palette, alpha, image);
+    let result = D::from_data(start_time, end_time, force, indexed_image);
     trace!("Parsed subtitle: {:?}", &result);
     Ok(result)
 }
@@ -664,7 +612,7 @@ mod tests {
         assert!(sub1.end_time.unwrap() - 50.9 < 0.1);
         assert!(!sub1.force);
         assert_eq!(
-            sub1.area,
+            *sub1.image.area(),
             Area::try_from(AreaValues {
                 x1: 750,
                 y1: 916,
@@ -673,8 +621,8 @@ mod tests {
             })
             .unwrap()
         );
-        assert_eq!(sub1.palette, [0, 3, 1, 0]);
-        assert_eq!(sub1.alpha, [15, 15, 15, 0]);
+        assert_eq!(*sub1.image.palette(), [0, 3, 1, 0]);
+        assert_eq!(*sub1.image.alpha(), [15, 15, 15, 0]);
         subs.next().expect("missing sub 2").unwrap();
         assert!(subs.next().is_none());
     }
