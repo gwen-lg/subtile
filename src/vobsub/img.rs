@@ -15,7 +15,7 @@ use thiserror::Error;
 use super::{IResultExt, Palette};
 use crate::{
     content::{Area, Size},
-    image::ImageSize,
+    image::ImageArea,
     util::BytesFormatter,
 };
 
@@ -161,12 +161,6 @@ impl VobSubIndexedImage {
         }
     }
 
-    /// Access to coordinates data
-    #[must_use]
-    pub const fn area(&self) -> &Area {
-        &self.area
-    }
-
     /// Access to palette data
     #[must_use]
     pub const fn palette(&self) -> &[u8; 4] {
@@ -215,11 +209,8 @@ impl fmt::Debug for VobSubIndexedImage {
     }
 }
 
-impl ImageSize for VobSubIndexedImage {
-    fn width(&self) -> u32 {
-        u32::from(self.area.width())
-    }
-    fn height(&self) -> u32 {
-        u32::from(self.area.height())
+impl ImageArea for VobSubIndexedImage {
+    fn area(&self) -> Area {
+        self.area
     }
 }

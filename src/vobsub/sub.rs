@@ -601,6 +601,8 @@ mod tests {
         use std::fs;
         use std::io::prelude::*;
 
+        use crate::image::ImageArea;
+
         //let _ = env_logger::init();
 
         let mut f = fs::File::open("./fixtures/example.sub").unwrap();
@@ -612,7 +614,7 @@ mod tests {
         assert!(sub1.end_time.unwrap() - 50.9 < 0.1);
         assert!(!sub1.force);
         assert_eq!(
-            *sub1.image.area(),
+            sub1.image.area(),
             Area::try_from(AreaValues {
                 x1: 750,
                 y1: 916,

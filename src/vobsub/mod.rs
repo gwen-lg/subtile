@@ -8,6 +8,8 @@
 //! extern crate image;
 //! extern crate subtile;
 //!
+//! use crate::subtile::image::ImageArea;
+//!
 //! let idx = subtile::vobsub::Index::open("./fixtures/example.idx").unwrap();
 //! for sub in idx.subtitles() {
 //!     let sub = sub.unwrap();
