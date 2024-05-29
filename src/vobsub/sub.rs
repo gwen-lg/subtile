@@ -507,13 +507,10 @@ impl<'a> VobsubParser<'a> {
             pes_packets: ps::pes_packets(input),
         }
     }
-}
 
-impl<'a> Iterator for VobsubParser<'a> {
-    type Item = Result<Subtitle, VobSubError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        profiling::scope!("VobsubParser next");
+    // Read all pes_packets needed to parse a subtitle.
+    fn next_sub_packet(&mut self) -> Option<Result<(f64, Vec<u8>), VobSubError>> {
+        profiling::scope!("VobsubParser next_sub_packet");
 
         // Get the PES packet containing the first chunk of our subtitle.
         let first: ps::PesPacket = try_iter!(self.pes_packets.next());
@@ -565,9 +562,21 @@ impl<'a> Iterator for VobsubParser<'a> {
             );
             sub_packet.truncate(wanted);
         }
+        Some(Ok((base_time, sub_packet)))
+    }
+}
+
+impl<'a> Iterator for VobsubParser<'a> {
+    type Item = Result<Subtitle, VobSubError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        profiling::scope!("VobsubParser next");
+
+        let (base_time, sub_packet) = try_iter!(self.next_sub_packet());
+        let subtitle = subtitle::<Subtitle, _>(&sub_packet, base_time);
 
         // Parse our subtitle buffer.
-        Some(subtitle::<Subtitle, _>(&sub_packet, base_time))
+        Some(subtitle)
     }
 }
 
