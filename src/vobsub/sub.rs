@@ -4,16 +4,14 @@
 //!
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
-use super::{
-    decoder::VobSubDecoder,
-    img::{decompress, VobSubIndexedImage},
-    mpeg2::ps,
-    VobSubError,
-};
+use super::{decoder::VobSubDecoder, img::VobSubIndexedImage, mpeg2::ps, VobSubError};
 use crate::{
     content::{Area, AreaValues},
     util::BytesFormatter,
-    vobsub::{img::VobSubRleImageData, IResultExt},
+    vobsub::{
+        img::{VobSubRleImage, VobSubRleImageData},
+        IResultExt,
+    },
 };
 use log::{trace, warn};
 use nom::{
@@ -254,20 +252,20 @@ fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize), VobSubError> {
 }
 
 /// Implement creation of [`Subtitle`] from parsing.
-impl VobSubDecoder for Subtitle {
+impl<'a> VobSubDecoder<'a> for Subtitle {
     type Output = Self;
 
     fn from_data(
         start_time: f64,
         end_time: Option<f64>,
         force: bool,
-        image: VobSubIndexedImage,
+        rle_image: VobSubRleImage<'a>,
     ) -> Self::Output {
         Self {
             start_time,
             end_time,
             force,
-            image,
+            image: VobSubIndexedImage::from(rle_image),
         }
     }
 }
@@ -297,10 +295,10 @@ pub enum ErrorMissing {
 }
 
 /// Parse a subtitle.
-fn subtitle<D, T>(raw_data: &[u8], base_time: f64) -> Result<T, VobSubError>
+fn subtitle<'a, D, T>(raw_data: &'a [u8], base_time: f64) -> Result<T, VobSubError>
 where
     T: Debug,
-    D: VobSubDecoder<Output = T>,
+    D: VobSubDecoder<'a, Output = T>,
 {
     // This parser is somewhat non-standard, because we need to work with
     // explicit offsets into `packet` in several places.
@@ -397,11 +395,10 @@ where
     // Decompress our image.
     let end = initial_control_offset + 2;
     let image_data = VobSubRleImageData::new(raw_data, rle_offsets, end)?;
-    let image = decompress(area.size(), image_data)?;
-    let indexed_image = VobSubIndexedImage::new(area, palette, alpha, image);
+    let rle_image = VobSubRleImage::new(area, palette, alpha, image_data);
 
     // Return our parsed subtitle.
-    let result = D::from_data(start_time, end_time, force, indexed_image);
+    let result = D::from_data(start_time, end_time, force, rle_image);
     trace!("Parsed subtitle: {:?}", &result);
     Ok(result)
 }

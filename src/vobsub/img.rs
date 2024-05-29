@@ -38,6 +38,47 @@ pub enum Error {
     ScanLineParsing(#[source] NomError),
 }
 
+pub struct VobSubRleImage<'a> {
+    area: Area,
+    palette: [u8; 4],
+    alpha: [u8; 4],
+    image_data: VobSubRleImageData<'a>,
+}
+impl<'a> VobSubRleImage<'a> {
+    pub const fn new(
+        area: Area,
+        palette: [u8; 4],
+        alpha: [u8; 4],
+        image_data: VobSubRleImageData<'a>,
+    ) -> Self {
+        Self {
+            area,
+            palette,
+            alpha,
+            image_data,
+        }
+    }
+
+    pub fn size(&self) -> Size {
+        self.area.size()
+    }
+    pub const fn palette(&self) -> &[u8; 4] {
+        &self.palette
+    }
+    pub const fn alpha(&self) -> &[u8; 4] {
+        &self.alpha
+    }
+    pub const fn raw_data(&self) -> &VobSubRleImageData<'a> {
+        &self.image_data
+    }
+}
+
+impl ImageArea for VobSubRleImage<'_> {
+    fn area(&self) -> Area {
+        self.area
+    }
+}
+
 /// Handle `VobSub` Rle image data in one struct.
 pub struct VobSubRleImageData<'a> {
     data: [&'a [u8]; 2],
@@ -144,7 +185,7 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
 /// order, starting at the upper-left and scanning right and down, with one
 /// byte for each 2-bit value.
 #[profiling::function]
-pub fn decompress(size: Size, data: VobSubRleImageData) -> Result<Vec<u8>, Error> {
+pub fn decompress(size: Size, data: &VobSubRleImageData) -> Result<Vec<u8>, Error> {
     trace!(
         "decompressing image {:?}, max: [0x{:x}, 0x{:x}]",
         &size,
@@ -244,5 +285,17 @@ impl fmt::Debug for VobSubIndexedImage {
 impl ImageArea for VobSubIndexedImage {
     fn area(&self) -> Area {
         self.area
+    }
+}
+
+impl From<VobSubRleImage<'_>> for VobSubIndexedImage {
+    fn from(rle_image: VobSubRleImage) -> Self {
+        let decompressed_image = decompress(rle_image.size(), rle_image.raw_data()).unwrap();
+        Self::new(
+            rle_image.area(),
+            *rle_image.palette(),
+            *rle_image.alpha(),
+            decompressed_image,
+        )
     }
 }
