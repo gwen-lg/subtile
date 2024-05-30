@@ -1,7 +1,8 @@
 //! Run-length encoded image format for subtitles.
 
 use core::fmt::{self, Debug};
-use image::{ImageBuffer, Rgba, RgbaImage};
+use image::{ImageBuffer, Luma, Rgba, RgbaImage};
+use iter_fixed::IntoIteratorFixed;
 use log::trace;
 use nom::{
     bits::complete::{tag as tag_bits, take as take_bits},
@@ -15,7 +16,7 @@ use thiserror::Error;
 use super::{IResultExt, NomError, Palette, VobSubError};
 use crate::{
     content::{Area, Size},
-    image::ImageArea,
+    image::{ImageArea, ImageSize, ToOcrImage, ToOcrImageOpt},
     util::BytesFormatter,
 };
 
@@ -297,5 +298,60 @@ impl From<VobSubRleImage<'_>> for VobSubIndexedImage {
             *rle_image.alpha(),
             decompressed_image,
         )
+    }
+}
+
+/// A struct to convert [`VobSubIndexedImage`] to image for `OCR`
+pub struct VobSubOcrImage<'a> {
+    indexed_img: &'a VobSubIndexedImage,
+    palette: &'a [f32; 16],
+}
+
+impl<'a> VobSubOcrImage<'a> {
+    /// create the image converter.
+    #[must_use]
+    pub const fn new(indexed_img: &'a VobSubIndexedImage, palette: &'a [f32; 16]) -> Self {
+        Self {
+            indexed_img,
+            palette,
+        }
+    }
+
+    // Compute the output palette color
+    fn compute_palette_color(&self, opt: ToOcrImageOpt) -> [Luma<u8>; 4] {
+        self.indexed_img
+            .palette()
+            .into_iter_fixed()
+            .zip(self.indexed_img.alpha())
+            .map(|(&palette_idx, &alpha)| (self.palette[palette_idx as usize], alpha))
+            .map(|(luminance, alpha)| {
+                if alpha > 0 && luminance > 0. {
+                    opt.text_color
+                } else {
+                    opt.background_color
+                }
+            })
+            .collect()
+    }
+}
+
+impl ToOcrImage for VobSubOcrImage<'_> {
+    #[profiling::function]
+    fn image(&self, opt: &ToOcrImageOpt) -> image::GrayImage {
+        let width = self.indexed_img.width();
+        let height = self.indexed_img.height();
+        let border = opt.border;
+        let out_color_palette = self.compute_palette_color(*opt);
+
+        let image = ImageBuffer::from_fn(width + border * 2, height + border * 2, |x, y| {
+            if x < border || x >= width + border || y < border || y >= height + border {
+                opt.background_color
+            } else {
+                let offset = (y - border) * width + (x - border);
+                let sub_palette_idx = self.indexed_img.raw_image()[offset as usize] as usize;
+                out_color_palette[sub_palette_idx]
+            }
+        });
+        image
     }
 }

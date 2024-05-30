@@ -57,6 +57,7 @@ useless_conversion = "deny"
 [dependencies]
 cast = "0.3"
 image = { version = "0.25", default-features = false, features = ["png"] }
+iter_fixed = "0.4"
 log = "0.4"
 nom = "7.1"
 once_cell = "1.19"

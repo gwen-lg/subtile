@@ -190,6 +190,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8478577c03552c21db0e2724ffb8986a5ce7af88107e6be5d2ee6e158c12800"
 
 [[package]]
+name = "iter_fixed"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "592ff74cdc6a923b2ae357dad7db2f5dcbf5d4ace9afcf3ab7c7f20b209fd949"
+
+[[package]]
 name = "log"
 version = "0.4.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -335,6 +341,7 @@ dependencies = [
  "env_logger",
  "glob",
  "image",
+ "iter_fixed",
  "log",
  "nom",
  "once_cell",
