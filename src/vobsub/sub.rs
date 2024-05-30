@@ -13,6 +13,7 @@ use crate::{
         IResultExt,
     },
 };
+use iter_fixed::IntoIteratorFixed;
 use log::{trace, warn};
 use nom::{
     bits::{bits, complete::take as take_bits},
@@ -394,6 +395,9 @@ where
 
     // Decompress our image.
     let end = initial_control_offset + 2;
+    // reverse palette & alpha once for all
+    let palette = palette.into_iter_fixed().rev().collect();
+    let alpha = alpha.into_iter_fixed().rev().collect();
     let image_data = VobSubRleImageData::new(raw_data, rle_offsets, end)?;
     let rle_image = VobSubRleImage::new(area, palette, alpha, image_data);
 
@@ -600,8 +604,8 @@ mod tests {
             })
             .unwrap()
         );
-        assert_eq!(*sub1.image.palette(), [0, 3, 1, 0]);
-        assert_eq!(*sub1.image.alpha(), [15, 15, 15, 0]);
+        assert_eq!(*sub1.image.palette(), [0, 1, 3, 0]);
+        assert_eq!(*sub1.image.alpha(), [0, 15, 15, 15]);
         subs.next().expect("missing sub 2").unwrap();
         assert!(subs.next().is_none());
     }
