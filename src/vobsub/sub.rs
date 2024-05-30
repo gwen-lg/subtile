@@ -7,6 +7,7 @@
 use super::{decoder::VobSubDecoder, img::VobSubIndexedImage, mpeg2::ps, VobSubError};
 use crate::{
     content::{Area, AreaValues},
+    time::TimeSpan,
     util::BytesFormatter,
     vobsub::{
         img::{VobSubRleImage, VobSubRleImageData},
@@ -26,20 +27,8 @@ use nom::{
     sequence::{preceded, Tuple},
     IResult,
 };
-use std::{
-    cmp::Ordering,
-    fmt::{self, Debug},
-};
+use std::{cmp::Ordering, fmt::Debug};
 use thiserror::Error;
-
-/// The default time between two adjacent subtitles if no end time is
-/// provided.  This is chosen to be a value that's usually representable in
-/// `SRT` format, barring rounding errors.
-const DEFAULT_SUBTITLE_SPACING: f64 = 0.001;
-
-/// The default length of a subtitle if no end time is provided and no
-/// subtitle follows immediately after.
-const DEFAULT_SUBTITLE_LENGTH: f64 = 5.0;
 
 /// Parse four 4-bit palette entries.
 fn palette_entries(input: &[u8]) -> IResult<&[u8], [u8; 4]> {
@@ -171,77 +160,6 @@ fn control_sequence(input: &[u8]) -> IResult<&[u8], ControlSequence> {
     ))
 }
 
-/// A single subtitle.
-#[derive(Clone, PartialEq)]
-pub struct Subtitle {
-    /// Start time of subtitle, in seconds.
-    start_time: f64,
-    /// End time of subtitle, in seconds.  This may be missing from certain
-    /// subtitles.
-    end_time: Option<f64>,
-    /// Should this subtitle be shown even when subtitles are off?
-    force: bool,
-    /// decompressed `VobSub` image data.
-    image: VobSubIndexedImage,
-}
-
-impl Subtitle {
-    /// Start time of subtitle, in seconds.
-    #[must_use]
-    pub const fn start_time(&self) -> f64 {
-        self.start_time
-    }
-
-    /// End time of subtitle, in seconds. This may be missing from certain
-    /// subtitles.
-    /// # Panics
-    /// Will panic if `end_time` is not set. As it should be set before returning subtitle.
-    /// If happened `end_time` is called to soon, or a change has broken the intended operation.
-    #[must_use]
-    pub fn end_time(&self) -> f64 {
-        self.end_time
-            .expect("end time should have been set before returning subtitle")
-    }
-
-    /// Should this subtitle be shown even when subtitles are off?
-    #[must_use]
-    pub const fn force(&self) -> bool {
-        self.force
-    }
-
-    /// Our decompressed image, stored with 2 bits per byte in row-major
-    /// order, that can be used as indices into `palette` and `alpha`.
-    #[must_use]
-    pub const fn raw_image(&self) -> &VobSubIndexedImage {
-        &self.image
-    }
-
-    /// Set end time of subtitle if missing
-    pub fn sub_fix_end_time(&mut self, next: Option<Self>) {
-        if self.end_time.is_none() {
-            self.end_time = match next {
-                Some(next) => {
-                    let new_end = next.start_time - DEFAULT_SUBTITLE_SPACING;
-                    let alt_end = self.start_time + DEFAULT_SUBTITLE_LENGTH;
-                    Some(new_end.min(alt_end))
-                }
-                None => Some(self.start_time + DEFAULT_SUBTITLE_LENGTH),
-            }
-        }
-    }
-}
-
-impl fmt::Debug for Subtitle {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Subtitle")
-            .field("start_time", &self.start_time)
-            .field("end_time", &self.end_time)
-            .field("force", &self.force)
-            .field("image", &self.image)
-            .finish_non_exhaustive()
-    }
-}
-
 /// Parse a single `u16` value from a buffer.  We don't use `nom` for this
 /// because it has an inconvenient error type.
 fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize), VobSubError> {
@@ -249,25 +167,6 @@ fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize), VobSubError> {
         Err(VobSubError::BufferTooSmallForU16)
     } else {
         Ok((&buff[2..], usize::from(buff[0]) << 8 | usize::from(buff[1])))
-    }
-}
-
-/// Implement creation of [`Subtitle`] from parsing.
-impl<'a> VobSubDecoder<'a> for Subtitle {
-    type Output = Self;
-
-    fn from_data(
-        start_time: f64,
-        end_time: Option<f64>,
-        force: bool,
-        rle_image: VobSubRleImage<'a>,
-    ) -> Self::Output {
-        Self {
-            start_time,
-            end_time,
-            force,
-            image: VobSubIndexedImage::from(rle_image),
-        }
     }
 }
 
@@ -496,13 +395,13 @@ impl<'a> VobsubParser<'a> {
 }
 
 impl<'a> Iterator for VobsubParser<'a> {
-    type Item = Result<Subtitle, VobSubError>;
+    type Item = Result<(TimeSpan, VobSubIndexedImage), VobSubError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         profiling::scope!("VobsubParser next");
 
         let (base_time, sub_packet) = try_iter!(self.next_sub_packet());
-        let subtitle = subtitle::<Subtitle, _>(&sub_packet, base_time);
+        let subtitle = subtitle::<(TimeSpan, VobSubIndexedImage), _>(&sub_packet, base_time);
 
         // Parse our subtitle buffer.
         Some(subtitle)
@@ -590,12 +489,12 @@ mod tests {
         let mut buffer = vec![];
         f.read_to_end(&mut buffer).unwrap();
         let mut subs = VobsubParser::new(&buffer);
-        let sub1 = subs.next().expect("missing sub 1").unwrap();
-        assert!(sub1.start_time - 49.4 < 0.1);
-        assert!(sub1.end_time.unwrap() - 50.9 < 0.1);
-        assert!(!sub1.force);
+        let (time_span, img) = subs.next().expect("missing sub 1").unwrap();
+        assert!(time_span.start.to_secs() - 49.4 < 0.1);
+        assert!(time_span.end.to_secs() - 50.9 < 0.1);
+        //assert!(!sub1.force);
         assert_eq!(
-            sub1.image.area(),
+            img.area(),
             Area::try_from(AreaValues {
                 x1: 750,
                 y1: 916,
@@ -604,8 +503,8 @@ mod tests {
             })
             .unwrap()
         );
-        assert_eq!(*sub1.image.palette(), [0, 1, 3, 0]);
-        assert_eq!(*sub1.image.alpha(), [0, 15, 15, 15]);
+        assert_eq!(*img.palette(), [0, 1, 3, 0]);
+        assert_eq!(*img.alpha(), [0, 15, 15, 15]);
         subs.next().expect("missing sub 2").unwrap();
         assert!(subs.next().is_none());
     }

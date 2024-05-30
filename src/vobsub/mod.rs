@@ -8,18 +8,17 @@
 //! extern crate image;
 //! extern crate subtile;
 //!
-//! use crate::subtile::image::ImageArea;
+//! use crate::subtile::image::{ImageSize, ImageArea};
 //!
 //! let idx = subtile::vobsub::Index::open("./fixtures/example.idx").unwrap();
 //! for sub in idx.subtitles() {
-//!     let sub = sub.unwrap();
-//!     println!("Time: {:0.3}-{:0.3}", sub.start_time(), sub.end_time());
-//!     println!("Always show: {:?}", sub.force());
-//!     let raw_img = sub.raw_image();
-//!     let area = raw_img.area();
+//!     let (time_span, image) = sub.unwrap();
+//!     println!("Time: {:0.3}-{:0.3}", time_span.start, time_span.end);
+//!     //println!("Always show: {:?}", sub.force());
+//!     let area = image.area();
 //!     println!("At: {}, {}", area.left(), area.top());
-//!     println!("Size: {}x{}", area.width(), area.height());
-//!     let img: image::RgbaImage = raw_img.to_image(idx.palette());
+//!     println!("Size: {}x{}", image.width(), image.height());
+//!     let img: image::RgbaImage = image.to_image(idx.palette());
 //!
 //!     // You can save or manipulate `img` using the APIs provided by the Rust
 //!     // `image` crate.
@@ -73,10 +72,10 @@ mod sub;
 
 pub use self::{
     idx::{read_palette, Index},
-    img::VobSubIndexedImage,
+    img::{VobSubIndexedImage, VobSubOcrImage},
     palette::{palette, Palette},
     probe::{is_idx_file, is_sub_file},
-    sub::{ErrorMissing, Subtitle},
+    sub::ErrorMissing,
 };
 
 use crate::content::ContentError;
