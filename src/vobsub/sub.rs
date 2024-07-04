@@ -4,7 +4,6 @@
 //!
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
-use cast;
 use image::{ImageBuffer, Rgba, RgbaImage};
 use log::{trace, warn};
 use nom::{
@@ -242,15 +241,15 @@ impl Subtitle {
     /// Decompress to subtitle to an RBGA image.
     #[must_use]
     pub fn to_image(&self, palette: &Palette) -> RgbaImage {
-        let width = cast::u32(self.area.width());
-        let height = cast::u32(self.area.height());
+        let width = u32::from(self.area.width());
+        let height = u32::from(self.area.height());
         ImageBuffer::from_fn(width, height, |x, y| {
             let offset = cast::usize(y * width + x);
             // We need to subtract the raw index from 3 to get the same
             // results as everybody else.  I found this by inspecting the
             // Handbrake subtitle decoding routines.
-            let px = cast::usize(3 - self.raw_image[offset]);
-            let rgb = palette[cast::usize(self.palette[px])].0;
+            let px = usize::from(3 - self.raw_image[offset]);
+            let rgb = palette[usize::from(self.palette[px])].0;
             let a = self.alpha[px];
             let aa = a << 4 | a;
             Rgba([rgb[0], rgb[1], rgb[2], aa])
@@ -377,7 +376,7 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
 
         // Figure out where to look for the next control sequence,
         // if any.
-        let next_control_offset = cast::usize(control.next);
+        let next_control_offset = usize::from(control.next);
         match control_offset.cmp(&next_control_offset) {
             Ordering::Greater => {
                 return Err(VobSubError::ControlOffsetWentBackwards);
@@ -412,9 +411,9 @@ fn subtitle(raw_data: &[u8], base_time: f64) -> Result<Subtitle, VobSubError> {
     // actually want to remove `end` entirely here and allow the scan lines
     // to go to the end of the packet, but I've never seen that in
     // practice.)
-    let start_0 = cast::usize(rle_offsets[0]);
-    let start_1 = cast::usize(rle_offsets[1]);
-    let end = cast::usize(initial_control_offset + 2);
+    let start_0 = usize::from(rle_offsets[0]);
+    let start_1 = usize::from(rle_offsets[1]);
+    let end = initial_control_offset + 2;
     if start_0 > start_1 || start_1 > end {
         return Err(VobSubError::InvalidScanLineOffsets {
             start_0,

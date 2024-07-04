@@ -46,8 +46,8 @@ impl Area {
     #[must_use]
     pub fn size(&self) -> Size {
         Size {
-            w: cast::usize(self.width()),
-            h: cast::usize(self.height()),
+            w: usize::from(self.width()),
+            h: usize::from(self.height()),
         }
     }
 }

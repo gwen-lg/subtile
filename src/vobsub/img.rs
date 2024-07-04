@@ -1,6 +1,5 @@
 //! Run-length encoded image format for subtitles.
 
-use cast;
 use log::trace;
 use nom::{
     bits::complete::{tag as tag_bits, take as take_bits},
@@ -82,7 +81,7 @@ fn scan_line(input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
         let count = if run.cnt == 0 {
             width - x
         } else {
-            cast::usize(run.cnt)
+            usize::from(run.cnt)
         };
         if x + count > output.len() {
             return Err(Error::ToSmallOutput {
