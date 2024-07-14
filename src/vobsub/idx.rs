@@ -68,7 +68,7 @@ impl Index {
 
     /// Iterate over the subtitles associated with this `*.idx` file.
     #[must_use]
-    pub fn subtitles(&self) -> sub::VobsubParser {
+    pub fn subtitles<D>(&self) -> sub::VobsubParser<D> {
         sub::VobsubParser::new(&self.sub_data)
     }
 }

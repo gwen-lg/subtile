@@ -8,10 +8,14 @@
 //! extern crate image;
 //! extern crate subtile;
 //!
-//! use crate::subtile::image::{ImageSize, ImageArea};
+//! use crate::subtile::{
+//!     image::{ImageSize, ImageArea},
+//!     time::TimeSpan,
+//!     vobsub::VobSubIndexedImage
+//! };
 //!
 //! let idx = subtile::vobsub::Index::open("./fixtures/example.idx").unwrap();
-//! for sub in idx.subtitles() {
+//! for sub in idx.subtitles::<(TimeSpan, VobSubIndexedImage)>() {
 //!     let (time_span, image) = sub.unwrap();
 //!     println!("Time: {:0.3}-{:0.3}", time_span.start, time_span.end);
 //!     //println!("Always show: {:?}", sub.force());

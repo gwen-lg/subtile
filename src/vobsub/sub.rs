@@ -27,7 +27,7 @@ use nom::{
     sequence::{preceded, Tuple},
     IResult,
 };
-use std::{cmp::Ordering, fmt::Debug};
+use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
 use thiserror::Error;
 
 /// Parse four 4-bit palette entries.
@@ -322,17 +322,19 @@ macro_rules! try_iter {
 /// An internal iterator over subtitles.  These subtitles may not have a
 /// valid `end_time`, so we'll try to fix them up before letting the user
 /// see them.
-pub struct VobsubParser<'a> {
+pub struct VobsubParser<'a, Decoder> {
     pes_packets: ps::PesPackets<'a>,
+    phantom_data: PhantomData<Decoder>,
 }
 
-impl<'a> VobsubParser<'a> {
+impl<'a, Decoder> VobsubParser<'a, Decoder> {
     /// To parse a `vobsub` (.sub) file content.
     /// Return an iterator over the subtitles in this data stream.
     #[must_use]
     pub const fn new(input: &'a [u8]) -> Self {
         Self {
             pes_packets: ps::pes_packets(input),
+            phantom_data: PhantomData,
         }
     }
 
@@ -394,7 +396,7 @@ impl<'a> VobsubParser<'a> {
     }
 }
 
-impl<'a> Iterator for VobsubParser<'a> {
+impl<'a, D> Iterator for VobsubParser<'a, D> {
     type Item = Result<(TimeSpan, VobSubIndexedImage), VobSubError>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -488,7 +490,7 @@ mod tests {
         let mut f = fs::File::open("./fixtures/example.sub").unwrap();
         let mut buffer = vec![];
         f.read_to_end(&mut buffer).unwrap();
-        let mut subs = VobsubParser::new(&buffer);
+        let mut subs = VobsubParser::<(TimeSpan, VobSubIndexedImage)>::new(&buffer);
         let (time_span, img) = subs.next().expect("missing sub 1").unwrap();
         assert!(time_span.start.to_secs() - 49.4 < 0.1);
         assert!(time_span.end.to_secs() - 50.9 < 0.1);
@@ -515,7 +517,7 @@ mod tests {
         use idx::Index;
         //let _ = env_logger::init();
         let idx = Index::open("./fixtures/tiny.idx").unwrap();
-        let mut subs = idx.subtitles();
+        let mut subs = idx.subtitles::<TimeSpan>();
         subs.next().expect("missing sub").unwrap();
         assert!(subs.next().is_none());
     }
@@ -530,13 +532,13 @@ mod tests {
         // return the same subtitle data.
         let tiny = Index::open("./fixtures/tiny.idx")
             .unwrap()
-            .subtitles()
+            .subtitles::<TimeSpan>()
             .next()
             .unwrap()
             .unwrap();
         let split = Index::open("./fixtures/tiny-split.idx")
             .unwrap()
-            .subtitles()
+            .subtitles::<TimeSpan>()
             .next()
             .unwrap()
             .unwrap();
