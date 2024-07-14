@@ -37,3 +37,20 @@ impl<'a> VobSubDecoder<'a> for (TimeSpan, VobSubIndexedImage) {
         )
     }
 }
+
+/// Decode data from [`VobSubParser`] and get only the [`TimeSpan`].
+impl<'a> VobSubDecoder<'a> for TimeSpan {
+    type Output = Self;
+
+    fn from_data(
+        start_time: f64,
+        end_time: Option<f64>,
+        _force: bool,
+        _rle_image: VobSubRleImage<'a>,
+    ) -> Self::Output {
+        Self::new(
+            TimePoint::from_secs(start_time),
+            TimePoint::from_secs(end_time.unwrap_or(DEFAULT_SUBTITLE_LENGTH)),
+        )
+    }
+}
