@@ -512,6 +512,40 @@ mod tests {
     }
 
     #[test]
+    fn parse_subtitles_times() {
+        //use env_logger;
+        use std::fs;
+        use std::io::prelude::*;
+
+        use crate::image::ImageArea;
+
+        //let _ = env_logger::init();
+
+        let mut f = fs::File::open("./fixtures/example.sub").unwrap();
+        let mut buffer = vec![];
+        f.read_to_end(&mut buffer).unwrap();
+        let mut subs = VobsubParser::<TimeSpan>::new(&buffer);
+        let (time_span, img) = subs.next().expect("missing sub 1").unwrap();
+        assert!(time_span.start.to_secs() - 49.4 < 0.1);
+        assert!(time_span.end.to_secs() - 50.9 < 0.1);
+        //assert!(!sub1.force);
+        assert_eq!(
+            img.area(),
+            Area::try_from(AreaValues {
+                x1: 750,
+                y1: 916,
+                x2: 1172,
+                y2: 966
+            })
+            .unwrap()
+        );
+        assert_eq!(*img.palette(), [0, 1, 3, 0]);
+        assert_eq!(*img.alpha(), [0, 15, 15, 15]);
+        subs.next().expect("missing sub 2").unwrap();
+        assert!(subs.next().is_none());
+    }
+
+    #[test]
     fn parse_subtitles_from_subtitle_edit() {
         //use env_logger;
         use idx::Index;
