@@ -1,6 +1,7 @@
 use crate::SubtileError;
 use image::{EncodableLayout, Pixel, PixelWithColorType};
 use std::{
+    borrow::Borrow,
     fs::create_dir_all,
     io,
     ops::Deref,
@@ -32,12 +33,16 @@ pub enum DumpError {
 
 /// Dump some images in a folder specified by the path.
 #[profiling::function]
-pub fn dump_images<'a, Img, P, Container>(path: &str, images: Img) -> Result<(), SubtileError>
+pub fn dump_images<'a, Iter, Img, P, Container>(
+    path: &str,
+    images: Iter,
+) -> Result<(), SubtileError>
 where
     P: Pixel + PixelWithColorType + 'a,
     [P::Subpixel]: EncodableLayout,
     Container: Deref<Target = [P::Subpixel]> + 'a,
-    Img: IntoIterator<Item = &'a image::ImageBuffer<P, Container>>,
+    Img: Borrow<image::ImageBuffer<P, Container>>,
+    Iter: IntoIterator<Item = Img>,
 {
     let folder_path = PathBuf::from(path);
 
@@ -55,7 +60,7 @@ where
         .try_for_each(move |(i, img)| {
             let mut filepath = folder_path.clone();
             filepath.push(format!("{i:06}.png"));
-            dump_image(&filepath, img).map_err(|source| DumpError::DumpImage {
+            dump_image(&filepath, img.borrow()).map_err(|source| DumpError::DumpImage {
                 filename: filepath,
                 source,
             })
