@@ -37,6 +37,11 @@ pub enum Error {
     /// Forward scan line parsind error.
     #[error("Parsing scan line failed")]
     ScanLineParsing(#[source] NomError),
+
+    /// Indicate if decompress Rle data don't have consume all data,
+    /// this shouldn't happen
+    #[error("Rle decompress don't have consume all data")]
+    NotDecompressAllData,
 }
 
 pub struct VobSubRleImage<'a> {
@@ -205,7 +210,11 @@ pub fn decompress(size: Size, data: &VobSubRleImageData) -> Result<Vec<u8>, Erro
         offsets[odd] += consumed;
     }
     // TODO: Warn if we didn't consume everything.
-    Ok(img)
+    if data.data[0].len() > offsets[0] || data.data[1].len() > offsets[1] {
+        Err(Error::NotDecompressAllData)
+    } else {
+        Ok(img)
+    }
 }
 
 /// Manage image data from `VobSub` file.
