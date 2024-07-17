@@ -1,7 +1,7 @@
 //! Run-length encoded image format for subtitles.
 
 use core::fmt::{self, Debug};
-use image::{ImageBuffer, Luma, Rgba, RgbaImage};
+use image::{ImageBuffer, Luma, Pixel, Rgba, RgbaImage};
 use iter_fixed::IntoIteratorFixed;
 use log::trace;
 use nom::{
@@ -16,7 +16,7 @@ use thiserror::Error;
 use super::{IResultExt, NomError, Palette, VobSubError};
 use crate::{
     content::{Area, Size},
-    image::{ImageArea, ImageSize, ToOcrImage, ToOcrImageOpt},
+    image::{ImageArea, ImageSize, ToImage, ToOcrImage, ToOcrImageOpt},
     util::BytesFormatter,
 };
 
@@ -298,6 +298,71 @@ impl From<VobSubRleImage<'_>> for VobSubIndexedImage {
             *rle_image.alpha(),
             decompressed_image,
         )
+    }
+}
+
+/// This struct implement [`ToImage`] to generate an `ImageBuffer` from
+/// a [`VobSubIndexedImage`], a palette and a pixel convertion function.
+pub struct VobSubToImage<'a, I, P>
+where
+    P: Pixel<Subpixel = u8>,
+{
+    indexed_img: &'a VobSubIndexedImage,
+    palette: &'a [I; 16],
+    conv_fn: fn(I, u8) -> P,
+}
+
+impl<'a, I, P> VobSubToImage<'a, I, P>
+where
+    P: Pixel<Subpixel = u8>,
+{
+    /// Create a `VobSub` image converter from a [`VobSubIndexedImage`], a `palette` and
+    /// a pixel conversion function.
+    #[must_use]
+    pub fn new(img: &'a VobSubIndexedImage, palette: &'a [I; 16], conv_fn: fn(I, u8) -> P) -> Self {
+        Self {
+            indexed_img: img,
+            palette,
+            conv_fn,
+        }
+    }
+
+    fn compute_palette_color(&self, conv: fn(I, u8) -> P) -> [P; 4]
+    where
+        I: Clone,
+        P: Pixel<Subpixel = u8>,
+    {
+        self.indexed_img
+            .palette()
+            .into_iter_fixed()
+            .zip(self.indexed_img.alpha())
+            .map(|(&palette_idx, &alpha)| (self.palette[palette_idx as usize].clone(), alpha))
+            .map(|(luminance, alpha)| conv(luminance, alpha))
+            .collect()
+    }
+}
+impl<I, P> ToImage for VobSubToImage<'_, I, P>
+where
+    I: Clone,
+    P: Pixel<Subpixel = u8>,
+{
+    type Pixel = P;
+
+    #[profiling::function]
+    fn to_image(&self) -> ImageBuffer<P, Vec<u8>>
+    where
+        P: Pixel<Subpixel = u8>,
+    {
+        let width = self.indexed_img.width();
+        let height = self.indexed_img.height();
+        let out_color_palette = self.compute_palette_color(self.conv_fn);
+
+        let image = ImageBuffer::from_fn(width, height, |x, y| {
+            let offset = y * width + x;
+            let sub_palette_idx = self.indexed_img.raw_image()[offset as usize] as usize;
+            out_color_palette[sub_palette_idx]
+        });
+        image
     }
 }
 
