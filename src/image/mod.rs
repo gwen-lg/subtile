@@ -37,6 +37,8 @@ where
 pub trait ToImage {
     /// Define the format of Subpixel of output
     type Pixel: Pixel<Subpixel = u8>;
+    ///TODO: Define the container type
+    // type Container: Deref<Target = [<Pixel as image::Pixel>::Subpixel]>;
 
     /// define the method to generate the image
     fn to_image(&self) -> ImageBuffer<Self::Pixel, Vec<u8>>;
