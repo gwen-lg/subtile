@@ -5,6 +5,7 @@ pub use utils::{dump_images, DumpError};
 
 use crate::content::Area;
 use image::{GrayImage, ImageBuffer, Luma, Pixel};
+use std::ops::Deref;
 
 /// Define access to Size of an Image. Used for Subtitle content.
 pub trait ImageSize {
@@ -42,6 +43,36 @@ pub trait ToImage {
 
     /// define the method to generate the image
     fn to_image(&self) -> ImageBuffer<Self::Pixel, Vec<u8>>;
+}
+
+/// define an operation to generate a
+pub trait ToImage2 {
+    /// Define the subpixel format of the output image.
+    type Subpixel;
+    /// Define the container type of pixels of the output image.
+    type Container;
+    /// Define the format of pixels of output image.
+    type Pixel: Pixel<Subpixel = Self::Subpixel>;
+    ///TODO: Define the container type
+    // type Container: Deref<Target = [<Pixel as image::Pixel>::Subpixel]>;
+
+    /// define the method to generate the image
+    fn to_image(&self) -> ImageBuffer<Self::Pixel, Self::Container>;
+}
+
+// test
+impl<P, C, S> ToImage2 for ImageBuffer<P, C>
+where
+    P: Pixel<Subpixel = S>,
+    C: Clone + Deref<Target = [P::Subpixel]>,
+{
+    type Subpixel = S;
+    type Container = C;
+    type Pixel = P;
+
+    fn to_image(&self) -> ImageBuffer<Self::Pixel, Self::Container> {
+        self.clone()
+    }
 }
 
 /// Options for image generation.
