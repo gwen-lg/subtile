@@ -1,7 +1,7 @@
 //! Run-length encoded image format for subtitles.
 
 use core::fmt::{self, Debug};
-use image::{ImageBuffer, Luma, Pixel, Rgba, RgbaImage};
+use image::{ImageBuffer, Luma, Pixel, Rgb, Rgba, RgbaImage};
 use iter_fixed::IntoIteratorFixed;
 use log::trace;
 use nom::{
@@ -299,6 +299,17 @@ impl From<VobSubRleImage<'_>> for VobSubIndexedImage {
             decompressed_image,
         )
     }
+}
+
+/// convert rbg + alpha to Rgba
+#[must_use]
+pub fn conv_to_rgba(color: Rgb<u8>, alpha: u8) -> Rgba<u8> {
+    Rgba([
+        color.channels()[0],
+        color.channels()[1],
+        color.channels()[2],
+        alpha,
+    ])
 }
 
 /// This struct implement [`ToImage`] to generate an `ImageBuffer` from

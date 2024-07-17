@@ -9,9 +9,9 @@
 //! extern crate subtile;
 //!
 //! use crate::subtile::{
-//!     image::{ImageSize, ImageArea},
+//!     image::{ImageSize, ImageArea, ToImage},
 //!     time::TimeSpan,
-//!     vobsub::VobSubIndexedImage
+//!     vobsub::{conv_to_rgba, VobSubIndexedImage, VobSubToImage},
 //! };
 //!
 //! let idx = subtile::vobsub::Index::open("./fixtures/example.idx").unwrap();
@@ -22,7 +22,7 @@
 //!     let area = image.area();
 //!     println!("At: {}, {}", area.left(), area.top());
 //!     println!("Size: {}x{}", image.width(), image.height());
-//!     let img: image::RgbaImage = image.to_image(idx.palette());
+//!     let img: image::RgbaImage = VobSubToImage::new(&image, idx.palette(), conv_to_rgba).to_image();
 //!
 //!     // You can save or manipulate `img` using the APIs provided by the Rust
 //!     // `image` crate.
@@ -76,7 +76,7 @@ mod sub;
 
 pub use self::{
     idx::{read_palette, Index},
-    img::{VobSubIndexedImage, VobSubOcrImage, VobSubToImage},
+    img::{conv_to_rgba, VobSubIndexedImage, VobSubOcrImage, VobSubToImage},
     palette::{palette, Palette},
     probe::{is_idx_file, is_sub_file},
     sub::ErrorMissing,
