@@ -1,7 +1,7 @@
 //! Run-length encoded image format for subtitles.
 
 use core::fmt::{self, Debug};
-use image::{ImageBuffer, Luma, Pixel, Rgb, Rgba, RgbaImage};
+use image::{ImageBuffer, Luma, Pixel, Rgb, Rgba};
 use iter_fixed::IntoIteratorFixed;
 use log::trace;
 use nom::{
@@ -13,7 +13,7 @@ use nom::{
 };
 use thiserror::Error;
 
-use super::{IResultExt, NomError, Palette, VobSubError};
+use super::{IResultExt, NomError, VobSubError};
 use crate::{
     content::{Area, Size},
     image::{ImageArea, ImageSize, ToImage, ToOcrImage, ToOcrImageOpt},
@@ -251,25 +251,6 @@ impl VobSubIndexedImage {
     #[must_use]
     pub fn raw_image(&self) -> &[u8] {
         self.raw_image.as_slice()
-    }
-
-    /// Decompress to subtitle to an RBGA image.
-    /// WIP: replace by more generic
-    #[must_use]
-    pub fn to_image(&self, palette: &Palette) -> RgbaImage {
-        let width = u32::from(self.area.width());
-        let height = u32::from(self.area.height());
-        ImageBuffer::from_fn(width, height, |x, y| {
-            let offset = cast::usize(y * width + x);
-            // We need to subtract the raw index from 3 to get the same
-            // results as everybody else.  I found this by inspecting the
-            // Handbrake subtitle decoding routines.
-            let px = usize::from(3 - self.raw_image[offset]);
-            let rgb = palette[usize::from(self.palette[px])].0;
-            let a = self.alpha[px];
-            let aa = a << 4 | a;
-            Rgba([rgb[0], rgb[1], rgb[2], aa])
-        })
     }
 }
 
