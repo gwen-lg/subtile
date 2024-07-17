@@ -4,7 +4,7 @@ mod utils;
 pub use utils::{dump_images, DumpError};
 
 use crate::content::Area;
-use image::{GrayImage, Luma};
+use image::{GrayImage, ImageBuffer, Luma, Pixel};
 
 /// Define access to Size of an Image. Used for Subtitle content.
 pub trait ImageSize {
@@ -31,6 +31,15 @@ where
     fn height(&self) -> u32 {
         u32::from(self.area().height())
     }
+}
+
+/// define the behavior of generate a `ImageBuffer` from a `self`
+pub trait ToImage {
+    /// Define the format of Subpixel of output
+    type Pixel: Pixel<Subpixel = u8>;
+
+    /// define the method to generate the image
+    fn to_image(&self) -> ImageBuffer<Self::Pixel, Vec<u8>>;
 }
 
 /// Options for image generation.
