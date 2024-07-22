@@ -45,7 +45,7 @@
 //! Useful references include:
 //!
 //! - [Program Stream](https://en.wikipedia.org/wiki/MPEG_program_stream) (PS)
-//! - [Packetized Elementary Stream][`PES`] (`PES`)
+//! - [Packetized Elementary Stream][PES] (`PES`)
 //! - [DVD subtitles](http://sam.zoy.org/writings/dvd/subtitles/)
 //! - [System Time Clock](http://www.bretl.com/mpeghtml/STC.HTM)
 //!
