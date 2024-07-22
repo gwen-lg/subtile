@@ -20,7 +20,7 @@ use crate::{
     util::BytesFormatter,
 };
 
-/// Errors of `vobsub` img management.
+/// Errors of `vobsub` image management.
 #[derive(Error, Debug)]
 pub enum Error {
     /// If there is more data to write than the space in output.
