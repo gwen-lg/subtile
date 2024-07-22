@@ -45,7 +45,7 @@
 //! Useful references include:
 //!
 //! - [Program Stream](https://en.wikipedia.org/wiki/MPEG_program_stream) (PS)
-//! - [Packetized Elementary Stream][PES] (PES)
+//! - [Packetized Elementary Stream][`PES`] (`PES`)
 //! - [DVD subtitles](http://sam.zoy.org/writings/dvd/subtitles/)
 //! - [System Time Clock](http://www.bretl.com/mpeghtml/STC.HTM)
 //!
@@ -53,7 +53,7 @@
 //!
 //! There are also any number of open source implementations of subtitles
 //! decoders which might be useful once you get past the Program Stream and
-//! PES wrappers.
+//! `PES` wrappers.
 //!
 //! There are two closely-related formats that this library could be
 //! extended to parse without too much work:
@@ -61,7 +61,7 @@
 //! - Subtitles embedded in DVD-format video.  These should contain the
 //!   same subtitle packet format, but the `*.idx` file is replaced by data
 //!   stored in an `IFO` file.
-//! - Subtitles stored in the Matroska container format.  Again, these use
+//! - Subtitles stored in the `Matroska` container format.  Again, these use
 //!   the same basic subtitle format, but the `*.idx` file is replaced by
 //!   an internal, stripped-down version of the same data in text format.
 //!
@@ -106,7 +106,7 @@ pub enum VobSubError {
     #[error("Palette must have 16 entries, found '{0}' one")]
     PaletteInvalidEntriesNumbers(usize),
 
-    /// Parsing of palette in idx file failed.
+    /// Parsing of palette in `*.idx` file failed.
     #[error("Error during palette pasing from .idx file")]
     PaletteError(#[source] NomError),
 

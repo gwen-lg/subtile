@@ -23,7 +23,7 @@ fn hex_primary(input: &[u8]) -> IResult<&[u8], u8> {
     )(input)
 }
 
-/// Parse a 3-byte hexadecimal RGB color.
+/// Parse a 3-byte hexadecimal `RGB` color.
 fn hex_rgb(input: &[u8]) -> IResult<&[u8], Rgb<u8>> {
     let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
 

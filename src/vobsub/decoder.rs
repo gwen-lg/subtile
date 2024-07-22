@@ -6,7 +6,9 @@ use crate::time::{TimePoint, TimeSpan};
 const DEFAULT_SUBTITLE_LENGTH: f64 = 5.0;
 
 /// The trait `VobSubDecoder` define the behavior to output data from `VobSub` parsing.
-/// This trait is used by [`VobSubParser`] to allow various decoding of parsing data.
+/// This trait is used by [`VobsubParser`] to allow various decoding of parsing data.
+///
+/// [`VobSubParser`]: crate::vobsub::sub::VobsubParser
 pub trait VobSubDecoder<'a> {
     type Output;
 
@@ -38,7 +40,7 @@ impl<'a> VobSubDecoder<'a> for (TimeSpan, VobSubIndexedImage) {
     }
 }
 
-/// Decode data from [`VobSubParser`] and get only the [`TimeSpan`].
+/// Decode data from `VobsubParser` and get only the [`TimeSpan`].
 impl<'a> VobSubDecoder<'a> for TimeSpan {
     type Output = Self;
 

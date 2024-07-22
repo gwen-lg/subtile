@@ -57,7 +57,7 @@ fn area(input: &[u8]) -> IResult<&[u8], AreaValues> {
     })(input)
 }
 
-/// Parse a pair of 16-bit RLE offsets.
+/// Parse a pair of 16-bit `RLE` offsets.
 fn rle_offsets(input: &[u8]) -> IResult<&[u8], [u16; 2]> {
     let (input, vec) = bits(count(
         take_bits::<_, _, _, nom::error::Error<(&[u8], usize)>>(16u16),
@@ -189,7 +189,7 @@ pub enum ErrorMissing {
     #[error("no alpha palette")]
     AlphaPalette,
 
-    /// No RLE offsets
+    /// No `RLE` offsets
     #[error("no RLE offsets")]
     RleOffset,
 }

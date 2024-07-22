@@ -80,7 +80,7 @@ impl ImageArea for VobSubRleImage<'_> {
     }
 }
 
-/// Handle `VobSub` Rle image data in one struct.
+/// Handle `VobSub` `Rle` image data in one struct.
 pub struct VobSubRleImageData<'a> {
     data: [&'a [u8]; 2],
 }
@@ -282,7 +282,7 @@ impl From<VobSubRleImage<'_>> for VobSubIndexedImage {
     }
 }
 
-/// convert rbg + alpha to Rgba
+/// convert rbg + alpha to `Rgba`
 #[must_use]
 pub fn conv_to_rgba(color: Rgb<u8>, alpha: u8) -> Rgba<u8> {
     Rgba([
