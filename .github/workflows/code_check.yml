@@ -41,6 +41,9 @@ jobs:
       - name: Install cargo-readme
         run: cargo install cargo-readme
 
+      - name: Install cargo-spellcheck
+        run: apt install libclang-dev && cargo install cargo-spellcheck
+
       - name: Check if readme is up to date
         id: cargo_readme
         if: $${{ always() }}
@@ -72,6 +75,12 @@ jobs:
         run: |
           cargo doc
 
+      - name: Check for spelling errors in docs
+        id: cargo_spellcheck
+        if: $${{ always() }}
+        run: |
+          cargo spellcheck
+
       - name: "Some checks failed"
         if: ${{ failure() }}
         run: |
@@ -84,6 +93,7 @@ jobs:
           echo "|Cargo test|${{ steps.cargo_test.outcome }}|" >> $GITHUB_STEP_SUMMARY
           echo "|Cargo fmt|${{ steps.cargo_fmt.outcome }}|" >> $GITHUB_STEP_SUMMARY
           echo "|Cargo doc|${{ steps.cargo_doc.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|Cargo spellcheck|${{ steps.cargo_spellcheck.outcome }}|" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Please check the failed jobs and fix where needed." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
