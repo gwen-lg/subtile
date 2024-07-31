@@ -107,7 +107,7 @@ pub enum VobSubError {
     PaletteInvalidEntriesNumbers(usize),
 
     /// Parsing of palette in `*.idx` file failed.
-    #[error("Error during palette pasing from .idx file")]
+    #[error("Error during palette parsing from .idx file")]
     PaletteError(#[source] NomError),
 
     /// If Scan line offsets values are not correct.
