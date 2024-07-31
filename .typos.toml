@@ -1,0 +1,6 @@
+[default.extend-words]
+# Don't correct the crate name
+subtile = "subtile"
+
+[files]
+extend-exclude = ["CHANGELOG.md"]
