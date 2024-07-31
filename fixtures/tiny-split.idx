@@ -21,7 +21,7 @@
 # Original frame size
 size: 718x480
 
-# Origin, relative to the upper-left corner, can be overloaded by aligment
+# Origin, relative to the upper-left corner, can be overloaded by alignment
 org: 0, 0
 
 # Image scaling (hor,ver), origin is at the upper-left corner or at the alignment coord (x, y)

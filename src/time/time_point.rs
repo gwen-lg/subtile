@@ -91,7 +91,7 @@ mod tests {
     }
 
     #[test]
-    fn time_point_creation_with_too_mutch_decimals() {
+    fn time_point_creation_with_too_much_decimals() {
         assert_eq!(TimePoint::from_msecs(265), TimePoint::from_secs(0.265_579));
         assert_eq!(TimePoint(142), TimePoint::from_secs(0.142_75));
     }
