@@ -17,7 +17,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ci_code_checks_ans_tests:
+  ci_code_checks_and_tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
