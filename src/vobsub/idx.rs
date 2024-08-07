@@ -24,6 +24,9 @@ pub struct Index {
 
 impl Index {
     /// Open an `*.idx` file and the associated `*.sub` file.
+    ///
+    /// # Errors
+    /// Will return VobSubError::Io if failed to open of read `.idx` or ``.sub`` file.
     #[profiling::function]
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, VobSubError> {
         let path = path.as_ref();
@@ -74,6 +77,13 @@ impl Index {
 }
 
 /// Read the palette in `*.idx` file content
+///
+/// # Errors
+/// Will return `VobSubError::MissingKey` if the palette key/value is not present
+/// Will return `VobSubError::PaletteError` if failed to read and parse palette value.
+///
+/// # Panics
+/// Panic if the Regex creation failed
 #[profiling::function]
 pub fn read_palette<T, Err>(mut input: BufReader<T>, mkerr: &Err) -> Result<Palette, VobSubError>
 where

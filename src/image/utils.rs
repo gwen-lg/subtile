@@ -32,6 +32,10 @@ pub enum DumpError {
 }
 
 /// Dump some images in a folder specified by the path.
+///
+/// # Errors
+/// Will return `DumpError::Folder` if the output folder creation failed.
+/// Will return `DumpError::DumpImage` if the dump of one image failed.
 #[profiling::function]
 pub fn dump_images<'a, Iter, Img, P, Container>(
     path: &str,
