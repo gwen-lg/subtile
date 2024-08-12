@@ -3,6 +3,9 @@
 //! transform, adjust, correct, ...
 //!
 //! # Project
+//! ## test of readme generation
+//! the readme should be updated by release-plz
+//!
 //! ## start
 //! The project started with the fork of [`vobsub`](https://crates.io/crates/vobsub)
 //! crate which no longer seems to be maintained.
