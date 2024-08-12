@@ -7,7 +7,7 @@ permissions:
 on:
   push:
     branches:
-      - main
+      - test_cargo_readme
 
 jobs:
   release-plz:
