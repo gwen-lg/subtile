@@ -1,16 +1,19 @@
 # subtile
-## Current version: 0.3.0
+## Current version: 0.3.1
 
 ![Maintenance](https://img.shields.io/badge/maintenance-activly--developed-brightgreen.svg)
 [![crates.io](https://img.shields.io/crates/v/subtile.svg)](https://crates.io/crates/subtile)
 [![docs.rs](https://docs.rs/subtile/badge.svg)](https://docs.rs/subtile/)
-[![dependency status](https://deps.rs/crate/subtile/0.3.0/status.svg)](https://deps.rs/crate/subtile/0.3.0)
+[![dependency status](https://deps.rs/crate/subtile/0.3.1/status.svg)](https://deps.rs/crate/subtile/0.3.1)
 
 `subtile` is a Rust library which aims to propose a set of operations
 for working on subtitles. Example: parsing from and export in different formats,
 transform, adjust, correct, ...
 
 ## Project
+### test of readme generation
+the readme should be updated by release-plz
+
 ### start
 The project started with the fork of [`vobsub`](https://crates.io/crates/vobsub)
 crate which no longer seems to be maintained.
