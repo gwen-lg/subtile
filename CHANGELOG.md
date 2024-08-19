@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1](https://github.com/gwen-lg/subtile/compare/v0.3.0...v0.3.1) - 2024-08-19
+
+### Fixed
+- fixup! ci: add cargo readme management in release-plz workflow
+
+### Other
+- test change in lib.rs to see cargo readme run
+- setup current branch for trigger release plz
+- add cargo readme management in release-plz workflow
+
 ## [0.3.0](https://github.com/gwen-lg/subtile/compare/v0.2.0...v0.3.0) - 2024-08-11
 
 ### Added
