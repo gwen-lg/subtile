@@ -41,6 +41,6 @@ jobs:
             echo "run `cargo readme`"
             cargo readme > README.md
             git add .
-            git commit --amend
+            git commit --amend --no-edit
             git push
           fi
