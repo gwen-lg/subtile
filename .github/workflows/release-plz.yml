@@ -35,7 +35,7 @@ jobs:
         run: |
           set -e
 
-          pr_number=${{ steps.release-plz.outputs.pr && fromJSON(steps.release-plz.outputs.pr).number }}
+          pr_number=${{ fromJSON(steps.release-plz.outputs.pr).number }}
           if [[ -n "$pr_number" ]]; then
             gh pr checkout $pr_number
             echo "run `cargo readme`"
