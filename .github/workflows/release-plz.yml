@@ -42,5 +42,5 @@ jobs:
             cargo readme > README.md
             git add .
             git commit --amend --no-edit
-            git push
+            git push -f
           fi
