@@ -21,11 +21,26 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Run release-plz
+        id: release-plz
         uses: MarcoIeni/release-plz-action@v0.5
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       - name: Install cargo-readme
         run: cargo install cargo-readme
-      - name: Run Cargo readme
-        run: cargo readme > README.md
+      - name: Update README with cargo-readme in the release PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.release-plz.outputs.pr }}
+        run: |
+          set -e
+
+          pr_number=${{ steps.release-plz.outputs.pr && fromJSON(steps.release-plz.outputs.pr).number }}
+          if [[ -n "$pr_number" ]]; then
+            gh pr checkout $pr_number
+            echo "run `cargo readme`"
+            cargo readme > README.md
+            git add .
+            git commit --amend
+            git push
+          fi
