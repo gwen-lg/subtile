@@ -20,7 +20,7 @@ impl RleEncodedImage {
     ///
     /// [`SupParser`]: super::sup::SupParser
     #[must_use]
-    pub fn new(width: u16, height: u16, palette: Palette, raw: Vec<u8>) -> Self {
+    pub const fn new(width: u16, height: u16, palette: Palette, raw: Vec<u8>) -> Self {
         Self {
             width,
             height,

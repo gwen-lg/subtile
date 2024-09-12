@@ -226,7 +226,7 @@ pub struct VobSubIndexedImage {
 impl VobSubIndexedImage {
     /// Create a new `VobSubImage`
     #[must_use]
-    pub fn new(area: Area, palette: [u8; 4], alpha: [u8; 4], raw_image: Vec<u8>) -> Self {
+    pub const fn new(area: Area, palette: [u8; 4], alpha: [u8; 4], raw_image: Vec<u8>) -> Self {
         Self {
             area,
             palette,

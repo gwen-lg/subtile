@@ -59,7 +59,7 @@ impl Index {
 
     /// Create an Index from a palette and sub data
     #[must_use]
-    pub fn init(palette: Palette, sub_data: Vec<u8>) -> Self {
+    pub const fn init(palette: Palette, sub_data: Vec<u8>) -> Self {
         Self { palette, sub_data }
     }
 
