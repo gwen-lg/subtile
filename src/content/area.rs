@@ -14,6 +14,7 @@ pub struct AreaValues {
 }
 
 /// Location at which to display the subtitle.
+/// This is intended to manage values of pixel coordinates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Area(AreaValues);
 
@@ -67,5 +68,34 @@ impl TryFrom<AreaValues> for Area {
         } else {
             Ok(Self(coords_value))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Area, AreaValues};
+    use crate::content::ContentError;
+
+    const AREA_REF: AreaValues = AreaValues {
+        x1: 10,
+        y1: 10,
+        x2: 20,
+        y2: 20,
+    };
+
+    #[test]
+    fn area_creation() {
+        Area::try_from(AREA_REF).unwrap();
+
+        let invalid_init = matches!(
+            Area::try_from(AreaValues {
+                x1: 20,
+                y1: 10,
+                x2: 10,
+                y2: 20,
+            }),
+            Err(ContentError::InvalidAreaBounding)
+        );
+        assert!(invalid_init);
     }
 }
