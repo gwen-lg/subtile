@@ -60,6 +60,12 @@ impl Area {
             && self.0.y1 <= area.0.y2
             && self.0.y2 >= area.0.y1
     }
+
+    /// Indicate if the provided `Area` intersect on `y` axis with self.
+    #[must_use]
+    pub const fn intersect_y(&self, area: Self) -> bool {
+        self.0.y1 <= area.0.y2 && self.0.y2 >= area.0.y1
+    }
 }
 
 impl TryFrom<AreaValues> for Area {
@@ -182,6 +188,66 @@ mod tests {
             y1: 21,
             x2: 19,
             y2: 22,
+        })));
+    }
+
+    #[test]
+    const fn area_intersect_y() {
+        let area_ref = Area(AREA_REF);
+        assert!(area_ref.intersect_y(area_ref));
+        assert!(area_ref.intersect_y(Area(AreaValues {
+            x1: 50,
+            y1: 5,
+            x2: 15,
+            y2: 15,
+        })));
+        assert!(area_ref.intersect_y(Area(AreaValues {
+            x1: 20,
+            y1: 5,
+            x2: 30,
+            y2: 15,
+        })));
+        assert!(area_ref.intersect_y(Area(AreaValues {
+            x1: 0,
+            y1: 10,
+            x2: 1,
+            y2: 20,
+        })));
+        assert!(area_ref.intersect_y(Area(AreaValues {
+            x1: 10,
+            y1: 11,
+            x2: 11,
+            y2: 12,
+        })));
+        assert!(area_ref.intersect_y(Area(AreaValues {
+            x1: 10,
+            y1: 20,
+            x2: 11,
+            y2: 22,
+        })));
+    }
+
+    #[test]
+    const fn area_not_intersect_y() {
+        let area_ref = Area(AREA_REF);
+
+        assert!(!area_ref.intersect_y(Area(AreaValues {
+            x1: 0,
+            y1: 0,
+            x2: 30,
+            y2: 9,
+        })));
+        assert!(!area_ref.intersect_y(Area(AreaValues {
+            x1: 0,
+            y1: 21,
+            x2: 30,
+            y2: 25,
+        })));
+        assert!(!area_ref.intersect_y(Area(AreaValues {
+            x1: 10,
+            y1: 5,
+            x2: 20,
+            y2: 9,
         })));
     }
 }
