@@ -66,6 +66,15 @@ impl Area {
     pub const fn intersect_y(&self, area: Self) -> bool {
         self.0.y1 <= area.0.y2 && self.0.y2 >= area.0.y1
     }
+
+    /// Indicate if the provided `Area` is contained in self bounds.
+    #[must_use]
+    pub const fn contains(&self, area: Self) -> bool {
+        self.0.x1 <= area.0.x1
+            && self.0.x2 >= area.0.x2
+            && self.0.y1 <= area.0.y1
+            && self.0.y2 >= area.0.y2
+    }
 }
 
 impl TryFrom<AreaValues> for Area {
@@ -248,6 +257,61 @@ mod tests {
             y1: 5,
             x2: 20,
             y2: 9,
+        })));
+    }
+
+    #[test]
+    const fn area_contain() {
+        let area_ref = Area(AREA_REF);
+
+        assert!(area_ref.contains(area_ref));
+        assert!(area_ref.contains(Area(AreaValues {
+            x1: 10,
+            y1: 11,
+            x2: 20,
+            y2: 12,
+        })));
+        assert!(area_ref.contains(Area(AreaValues {
+            x1: 11,
+            y1: 11,
+            x2: 19,
+            y2: 19,
+        })));
+        assert!(area_ref.contains(Area(AreaValues {
+            x1: 14,
+            y1: 17,
+            x2: 15,
+            y2: 18,
+        })));
+    }
+
+    #[test]
+    const fn area_not_contain() {
+        let area_ref = Area(AREA_REF);
+
+        assert!(!area_ref.contains(Area(AreaValues {
+            x1: 9,
+            y1: 11,
+            x2: 12,
+            y2: 12,
+        })));
+        assert!(!area_ref.contains(Area(AreaValues {
+            x1: 9,
+            y1: 11,
+            x2: 12,
+            y2: 12,
+        })));
+        assert!(!area_ref.contains(Area(AreaValues {
+            x1: 10,
+            y1: 10,
+            x2: 21,
+            y2: 20,
+        })));
+        assert!(!area_ref.contains(Area(AreaValues {
+            x1: 20,
+            y1: 11,
+            x2: 21,
+            y2: 19,
         })));
     }
 }
