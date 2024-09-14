@@ -51,6 +51,15 @@ impl Area {
             h: usize::from(self.height()),
         }
     }
+
+    /// Indicate if the provided `Area` intersect with self.
+    #[must_use]
+    pub const fn intersect(&self, area: Self) -> bool {
+        self.0.x1 <= area.0.x2
+            && self.0.x2 >= area.0.x1
+            && self.0.y1 <= area.0.y2
+            && self.0.y2 >= area.0.y1
+    }
 }
 
 impl TryFrom<AreaValues> for Area {
@@ -97,5 +106,82 @@ mod tests {
             Err(ContentError::InvalidAreaBounding)
         );
         assert!(invalid_init);
+    }
+
+    #[test]
+    fn area_intersect() {
+        let area_ref = Area::try_from(AREA_REF).unwrap();
+        assert!(area_ref.intersect(area_ref));
+        assert!(area_ref.intersect(Area(AreaValues {
+            x1: 1,
+            y1: 1,
+            x2: 11,
+            y2: 11,
+        })));
+        assert!(area_ref.intersect(Area(AreaValues {
+            x1: 11,
+            y1: 11,
+            x2: 21,
+            y2: 21,
+        })));
+        assert!(area_ref.intersect(Area(AreaValues {
+            x1: 0,
+            y1: 11,
+            x2: 11,
+            y2: 11,
+        })));
+        assert!(area_ref.intersect(Area(AreaValues {
+            x1: 19,
+            y1: 19,
+            x2: 23,
+            y2: 21,
+        })));
+        assert!(area_ref.intersect(Area(AreaValues {
+            x1: 11,
+            y1: 11,
+            x2: 12,
+            y2: 20,
+        })));
+        assert!(area_ref.intersect(Area(AreaValues {
+            x1: 0,
+            y1: 0,
+            x2: 30,
+            y2: 30,
+        })));
+        assert!(area_ref.intersect(Area(AreaValues {
+            x1: 20,
+            y1: 10,
+            x2: 30,
+            y2: 20,
+        })));
+    }
+
+    #[test]
+    const fn area_not_intersect() {
+        let area_ref = Area(AREA_REF);
+        assert!(!area_ref.intersect(Area(AreaValues {
+            x1: 0,
+            y1: 5,
+            x2: 5,
+            y2: 15,
+        })));
+        assert!(!area_ref.intersect(Area(AreaValues {
+            x1: 11,
+            y1: 21,
+            x2: 12,
+            y2: 22,
+        })));
+        assert!(!area_ref.intersect(Area(AreaValues {
+            x1: 30,
+            y1: 11,
+            x2: 32,
+            y2: 20,
+        })));
+        assert!(!area_ref.intersect(Area(AreaValues {
+            x1: 11,
+            y1: 21,
+            x2: 19,
+            y2: 22,
+        })));
     }
 }
