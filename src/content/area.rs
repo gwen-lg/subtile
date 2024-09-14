@@ -1,3 +1,5 @@
+use std::cmp::{max, min};
+
 use super::{ContentError, Size};
 
 /// Location at which to display the subtitle.
@@ -74,6 +76,14 @@ impl Area {
             && self.0.x2 >= area.0.x2
             && self.0.y1 <= area.0.y1
             && self.0.y2 >= area.0.y2
+    }
+
+    /// Extend the area from an other `Area`
+    pub fn extend(&mut self, area: Self) {
+        self.0.x1 = min(self.0.x1, area.0.x1);
+        self.0.y1 = min(self.0.y1, area.0.y1);
+        self.0.x2 = max(self.0.x2, area.0.x2);
+        self.0.y2 = max(self.0.y2, area.0.y2);
     }
 }
 
@@ -313,5 +323,28 @@ mod tests {
             x2: 21,
             y2: 19,
         })));
+    }
+
+    #[test]
+    fn area_extend() {
+        let area_ref = Area(AREA_REF);
+
+        assert!(
+            {
+                let mut new = area_ref;
+                new.extend(Area(AreaValues {
+                    x1: 10,
+                    y1: 20,
+                    x2: 20,
+                    y2: 30,
+                }));
+                new
+            } == Area(AreaValues {
+                x1: 10,
+                y1: 10,
+                x2: 20,
+                y2: 30
+            })
+        )
     }
 }
