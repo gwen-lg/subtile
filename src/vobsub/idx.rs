@@ -1,12 +1,12 @@
 //! Parse a file in `*.idx` format.
 
 use log::trace;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use std::{
     fs,
     io::{self, prelude::*, BufReader},
     path::Path,
+    sync::LazyLock,
 };
 
 use super::{palette, sub, IResultExt, Palette, VobSubError};
@@ -90,7 +90,8 @@ where
     T: std::io::Read,
     Err: Fn(io::Error) -> VobSubError,
 {
-    static KEY_VALUE: Lazy<Regex> = Lazy::new(|| Regex::new("^([A-Za-z/ ]+): (.*)").unwrap());
+    static KEY_VALUE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new("^([A-Za-z/ ]+): (.*)").unwrap());
 
     let mut palette_val: Option<Palette> = None;
     let mut buf = String::with_capacity(256);
