@@ -69,6 +69,7 @@
 mod decoder;
 mod idx;
 mod img;
+mod modifier;
 mod mpeg2;
 mod palette;
 mod probe;
@@ -77,6 +78,7 @@ mod sub;
 pub use self::{
     idx::{read_palette, Index},
     img::{conv_to_rgba, VobSubIndexedImage, VobSubOcrImage, VobSubToImage},
+    modifier::VobsubModifier,
     palette::{palette, palette_rgb_to_luminance, Palette},
     probe::{is_idx_file, is_sub_file},
     sub::ErrorMissing,
