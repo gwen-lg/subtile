@@ -12,13 +12,13 @@ use nom::{
     sequence::Tuple,
     IResult,
 };
-use std::fmt;
+use std::{borrow::Borrow, fmt};
 
 use super::{
     clock::{clock_and_ext, Clock},
     pes,
 };
-use crate::vobsub::{NomError, VobSubError};
+use crate::vobsub::{modifier::DataAccessor, NomError, VobSubError};
 
 /// A parsed [MPEG-2 Program Stream header][MPEG-PS] (MPEG-PS).
 ///
@@ -43,7 +43,7 @@ impl fmt::Display for Header {
 }
 
 /// Parse a Program Stream header.
-pub fn header(input: &[u8]) -> IResult<&[u8], Header> {
+pub fn header(input: DataAccessor) -> IResult<DataAccessor, Header> {
     // Sync bytes.
     let tag1 = tag_bytes(&[0x00, 0x00, 0x01, 0xba]);
 
@@ -94,7 +94,7 @@ pub struct PesPacket<'a> {
 }
 
 /// Parse a Program Stream packet and the following `PES` packet.
-pub fn pes_packet(input: &[u8]) -> IResult<&[u8], PesPacket> {
+pub fn pes_packet(input: DataAccessor) -> IResult<DataAccessor, PesPacket> {
     let (input, (ps_header, pes_packet)) = (header, pes::packet).parse(input)?;
     Ok((
         input,
@@ -108,7 +108,7 @@ pub fn pes_packet(input: &[u8]) -> IResult<&[u8], PesPacket> {
 /// An iterator over all the `PES` packets in an MPEG-2 Program Stream.
 pub struct PesPackets<'a> {
     /// The remaining input to parse.
-    remaining: &'a [u8],
+    remaining: DataAccessor<'a>,
 }
 
 impl<'a> Iterator for PesPackets<'a> {
@@ -118,14 +118,16 @@ impl<'a> Iterator for PesPackets<'a> {
         loop {
             // Search for the start of a ProgramStream packet.
             let needle = &[0x00, 0x00, 0x01, 0xba];
-            let start = self
-                .remaining
-                .windows(needle.len())
-                .position(|window| needle == window);
+            let start = {
+                let slice: &[u8] = self.remaining.borrow();
+                slice
+                    .windows(needle.len())
+                    .position(|window| needle == window)
+            };
 
             if let Some(start) = start {
                 // We found the start, so try to parse it.
-                self.remaining = &self.remaining[start..];
+                self.remaining.shift(start); //= &self.remaining[start..];
                 match pes_packet(self.remaining) {
                     // We found a packet!
                     IResult::Ok((remaining, packet)) => {
@@ -138,7 +140,7 @@ impl<'a> Iterator for PesPackets<'a> {
                         // We have only a partial packet, and we hit the end of our
                         // data.
                         nom::Err::Incomplete(needed) => {
-                            self.remaining = &[];
+                            self.remaining.clear(); // = &[];
                             warn!("Incomplete packet, need: {needed:?}");
                             return Some(Err(VobSubError::PESPacket(NomError::IncompleteInput(
                                 needed,
@@ -147,14 +149,14 @@ impl<'a> Iterator for PesPackets<'a> {
                         // We got something that looked like a packet but
                         // wasn't parseable.  Log it and keep trying.
                         nom::Err::Error(err) | nom::Err::Failure(err) => {
-                            self.remaining = &self.remaining[needle.len()..];
+                            self.remaining.shift(needle.len()); //= &self.remaining[needle.len()..];
                             debug!("Skipping packet {:?}", &err);
                         }
                     },
                 }
             } else {
                 // We didn't find the start of a packet.
-                self.remaining = &[];
+                self.remaining.clear(); // = &[];
                 trace!("Reached end of data");
                 return None;
             }
@@ -164,6 +166,6 @@ impl<'a> Iterator for PesPackets<'a> {
 
 /// Iterate over all the `PES` packets in an MPEG-2 Program Stream (or at
 /// least those which contain subtitles).
-pub const fn pes_packets(input: &[u8]) -> PesPackets {
+pub const fn pes_packets(input: DataAccessor) -> PesPackets {
     PesPackets { remaining: input }
 }

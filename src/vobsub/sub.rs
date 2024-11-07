@@ -4,7 +4,9 @@
 //!
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
-use super::{decoder::VobSubDecoder, img::VobSubIndexedImage, mpeg2::ps, VobSubError};
+use super::{
+    decoder::VobSubDecoder, img::VobSubIndexedImage, modifier::DataAccessor, mpeg2::ps, VobSubError,
+};
 use crate::{
     content::{Area, AreaValues},
     time::TimeSpan,
@@ -334,9 +336,10 @@ impl<'a, Decoder> VobsubParser<'a, Decoder> {
     /// To parse a `vobsub` (.sub) file content.
     /// Return an iterator over the subtitles in this data stream.
     #[must_use]
-    pub const fn new(input: &'a [u8]) -> Self {
+    pub fn new(input: &'a mut [u8]) -> Self {
+        let data = DataAccessor { data: input };
         Self {
-            pes_packets: ps::pes_packets(input),
+            pes_packets: ps::pes_packets(data),
             phantom_data: PhantomData,
         }
     }
@@ -527,7 +530,7 @@ mod tests {
         let mut f = fs::File::open("./fixtures/example.sub").unwrap();
         let mut buffer = vec![];
         f.read_to_end(&mut buffer).unwrap();
-        let mut subs = VobsubParser::<TimeSpan>::new(&buffer);
+        let mut subs = VobsubParser::<TimeSpan>::new(&mut buffer);
         let (time_span, img) = subs.next().expect("missing sub 1").unwrap();
         assert!(time_span.start.to_secs() - 49.4 < 0.1);
         assert!(time_span.end.to_secs() - 50.9 < 0.1);

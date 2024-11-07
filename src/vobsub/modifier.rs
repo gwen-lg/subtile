@@ -1,6 +1,46 @@
-use std::marker::PhantomData;
+use std::{
+    borrow::{Borrow, BorrowMut},
+    marker::PhantomData,
+};
 
 use super::{mpeg2::ps, VobSubError};
+
+pub struct DataAccessor<'a> {
+    pub data: &'a mut [u8],
+}
+
+impl<'a> DataAccessor<'a> {
+    pub fn shift(&'a mut self, bytes: usize) {
+        self.data = &mut self.data[bytes..];
+    }
+
+    pub fn clear(&'a mut self) {
+        self.data = &mut [];
+    }
+}
+
+impl<'a> Borrow<[u8]> for DataAccessor<'a> {
+    fn borrow(&self) -> &[u8] {
+        self.data
+    }
+}
+
+impl<'a> BorrowMut<[u8]> for DataAccessor<'a> {
+    fn borrow_mut(&mut self) -> &mut [u8] {
+        self.data
+    }
+}
+
+//impl<'a> ParseError<&[u8]> for nom::error::Error<DataAccessor<'_>> {
+//     fn from_error_kind(input: &[u8], kind: nom::error::ErrorKind) -> Self {
+//         todo!()
+//         //&[u8]::from_error_kind(input, kind)
+//     }
+
+//     fn append(input: &[u8], kind: nom::error::ErrorKind, other: Self) -> Self {
+//         todo!()
+//     }
+//}
 
 /// Implement a tool to modify the `VobSub` data inplace (or during streaming).
 pub struct VobsubModifier<'a, Modifier> {
@@ -12,8 +52,9 @@ impl<'a, Modifier> VobsubModifier<'a, Modifier> {
     /// To update a `vobsub` (.sub) file content.
     #[must_use]
     pub fn new(input: &'a mut [u8]) -> Self {
+        let in_data = DataAccessor { data: input };
         Self {
-            pes_packets: ps::pes_packets(input),
+            pes_packets: ps::pes_packets(in_data),
             phantom_data: PhantomData,
         }
     }
