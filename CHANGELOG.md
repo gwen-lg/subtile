@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1](https://github.com/gwen-lg/subtile/compare/v0.3.0...v0.3.1) - 2025-01-06
+
+### Fixed
+
+- setup a default palette if missing in index file
+- *(const)* add missing const keyword
+
+### Other
+
+- use secrets.GITHUB_TOKEN not RELEASE_PLZ_TOKENT
+- remove useless intermediate variable in `read_palette`
+- add const for `palette` key
+- fix wokflows file path for triggering
+- *(clippy)* remove unnecessary closure for error creation
+- *(clippy)* remove explicit lifetimes than could be elided
+- *(cargo)* update crate thiserror to 2.0
+- *(cargo)* update dependendies
+- include cargo readme management in release-plz workflow
+
 ## [0.3.0](https://github.com/gwen-lg/subtile/compare/v0.2.0...v0.3.0) - 2024-08-11
 
 ### Added
