@@ -102,10 +102,19 @@ impl LastInSequenceFlag {
     }
 }
 
+#[derive(Debug)]
+pub enum ObjectDefinitionSegment {
+    Partial {
+        data: ObjectDefinitionSegmentData,
+        amount_of_data_read: usize,
+    },
+    Complete(ObjectDefinitionSegmentData),
+}
+
 /// This segment defines the graphics object : it contain the image.
 /// The `object_data` contain theimage data compressed using Run-length Encoding (RLE)
-#[derive(Debug)]
-pub struct ObjectDefinitionSegment {
+#[derive(Debug)] //TODO: define a custom Debug
+pub struct ObjectDefinitionSegmentData {
     pub width: u16,
     pub height: u16,
     pub object_data: Vec<u8>,
@@ -114,29 +123,62 @@ pub struct ObjectDefinitionSegment {
 pub fn read<Reader: BufRead + Seek>(
     reader: &mut Reader,
     segments_size: usize,
+    current_ods: Option<ObjectDefinitionSegment>,
 ) -> Result<ObjectDefinitionSegment, Error> {
     handle_object_fields(reader)?;
-
     let last_in_sequence_flag = LastInSequenceFlag::read(reader)?;
-    let data_size = read_obj_data_length(reader)?;
-    let data_size = data_size - 4; // don't know why for now !!! Object Data Length include Width + Height ?
 
-    let (width, height) = read_img_size(reader)?;
+    match current_ods {
+        None => {
+            assert!(
+                last_in_sequence_flag == LastInSequenceFlag::First
+                    || last_in_sequence_flag == LastInSequenceFlag::FirstAndLast
+            );
 
-    if last_in_sequence_flag == LastInSequenceFlag::FirstAndLast {
-        assert!(segments_size == 11 + data_size);
+            let data_size = read_obj_data_length(reader)?;
+            let (width, height) = read_img_size(reader)?;
+            let data_size = data_size - 4; // don't know why for now !!! Object Data Length include Width + Height ?
+            let mut object_data = vec![0; data_size]; // Create a `Vec` for contain data of object (image)
 
-        let mut object_data = vec![0; data_size];
-        let data_slice = object_data.as_mut_slice();
-        read_object_data(reader, data_slice)?;
+            let read_data_size = segments_size - 11; // Only read data from this segment, additional data are in the next segment, if there are any.
+            let data_buff = &mut object_data.as_mut_slice()[0..read_data_size];
+            read_object_data(reader, data_buff)?;
 
-        Ok(ObjectDefinitionSegment {
-            width,
-            height,
-            object_data,
-        })
-    } else {
-        Err(Error::LastInSequenceFlagNotManaged(last_in_sequence_flag))
+            let data = ObjectDefinitionSegmentData {
+                width,
+                height,
+                object_data,
+            };
+
+            if last_in_sequence_flag == LastInSequenceFlag::FirstAndLast {
+                assert!(read_data_size == data_size);
+                assert!(segments_size == 11 + data_size);
+
+                Ok(ObjectDefinitionSegment::Complete(data))
+            } else if last_in_sequence_flag == LastInSequenceFlag::First {
+                Ok(ObjectDefinitionSegment::Partial {
+                    data,
+                    amount_of_data_read: read_data_size,
+                })
+            } else {
+                Err(Error::LastInSequenceFlagNotManaged(last_in_sequence_flag))
+            }
+        }
+        Some(ObjectDefinitionSegment::Partial {
+            mut data,
+            amount_of_data_read,
+        }) => {
+            assert!(last_in_sequence_flag == LastInSequenceFlag::Last); //TODO: not first and not last ?
+
+            let start_idx = amount_of_data_read;
+            let end_idx = start_idx + (segments_size - 4);
+            let read_slice = &mut data.object_data.as_mut_slice()[start_idx..end_idx];
+            read_object_data(reader, read_slice)?;
+            Ok(ObjectDefinitionSegment::Complete(data))
+        }
+        Some(ObjectDefinitionSegment::Complete(_)) => {
+            panic!("read shouln'd be called with a `Complete` `ObjectDefinitionSegment`");
+        }
     }
 }
 

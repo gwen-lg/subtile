@@ -2,7 +2,8 @@ use crate::time::{TimePoint, TimeSpan};
 use std::io::{BufRead, Seek};
 
 use super::{
-    ods, pds,
+    ods::{self, ObjectDefinitionSegment},
+    pds,
     pgs_image::RleEncodedImage,
     segment::{read_header, skip_segment, SegmentTypeCode},
     PgsError,
@@ -77,6 +78,7 @@ impl PgsDecoder for DecodeTimeImage {
         let mut subtitle = None;
         let mut palette = None;
         let mut image = None;
+        let mut prev_ods = None;
 
         while let Some(segment) = {
             if subtitle.is_some() {
@@ -94,15 +96,21 @@ impl PgsDecoder for DecodeTimeImage {
                 }
                 SegmentTypeCode::Ods => {
                     let seg_size = header.size() as usize;
-                    let ods = ods::read(reader, seg_size)?;
+                    let ods = ods::read(reader, seg_size, prev_ods.take())?;
 
-                    let palette = palette.take().ok_or(PgsError::MissingPalette)?;
-                    image = Some(RleEncodedImage::new(
-                        ods.width,
-                        ods.height,
-                        palette,
-                        ods.object_data,
-                    ))
+                    // If data are complete, construct `image` from palette and image data
+                    // otherwise, keep read data to complete it with data from following segment.
+                    if let ObjectDefinitionSegment::Complete(ods) = ods {
+                        let palette = palette.take().ok_or(PgsError::MissingPalette)?;
+                        image = Some(RleEncodedImage::new(
+                            ods.width,
+                            ods.height,
+                            palette,
+                            ods.object_data,
+                        ));
+                    } else {
+                        prev_ods = Some(ods);
+                    }
                 }
                 SegmentTypeCode::End => {
                     let time = TimePoint::from_msecs(i64::from(header.presentation_time()));
@@ -123,6 +131,8 @@ impl PgsDecoder for DecodeTimeImage {
             };
         }
 
+        assert!(palette.is_none()); // palette should be transferred into image before get out of the function.
+        assert!(prev_ods.is_none()); // Ods data should be converted into image before get out of the function.
         Ok(subtitle)
     }
 }
