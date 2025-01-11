@@ -37,7 +37,7 @@ pub enum Error {
     ReadHeight(#[source] io::Error),
 
     /// The read of object data failed.
-    #[error("Try reading object data (buffer size: {buff_size})")]
+    #[error("Try reading object data (buffer slice size: {buff_size})")]
     ObjectData {
         #[source]
         source: io::Error,
@@ -127,12 +127,8 @@ pub fn read<Reader: BufRead + Seek>(
         assert!(segments_size == 11 + data_size);
 
         let mut object_data = vec![0; data_size];
-        reader
-            .read_exact(object_data.as_mut_slice())
-            .map_err(|source| Error::ObjectData {
-                source,
-                buff_size: object_data.len(),
-            })?;
+        let data_slice = object_data.as_mut_slice();
+        read_object_data(reader, data_slice)?;
 
         Ok(ObjectDefinitionSegment {
             width,
@@ -171,4 +167,17 @@ fn read_img_size<Reader: BufRead + Seek>(reader: &mut Reader) -> Result<(u16, u1
     reader.read_exact(&mut buffer).map_err(Error::ReadHeight)?;
     let height = u16::from_be_bytes(buffer);
     Ok((width, height))
+}
+
+// Read the `Object data` field.
+fn read_object_data<Reader: BufRead + Seek>(
+    reader: &mut Reader,
+    data_buff: &mut [u8],
+) -> Result<(), Error> {
+    reader
+        .read_exact(data_buff)
+        .map_err(|source| Error::ObjectData {
+            source,
+            buff_size: data_buff.len(),
+        })
 }
