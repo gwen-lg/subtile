@@ -79,6 +79,17 @@ impl Display for LastInSequenceFlag {
     }
 }
 
+impl LastInSequenceFlag {
+    fn read<Reader: BufRead + Seek>(reader: &mut Reader) -> Result<Self, Error> {
+        let mut last_in_sequence_byte = [0];
+        reader
+            .read_exact(&mut last_in_sequence_byte)
+            .map_err(Error::LastInSequenceFlagReadData)?;
+
+        Self::try_from(last_in_sequence_byte[0])
+    }
+}
+
 /// This segment defines the graphics object : it contain the image.
 /// The `object_data` contain theimage data compressed using Run-length Encoding (RLE)
 #[derive(Debug)]
@@ -94,11 +105,7 @@ pub fn read<Reader: BufRead + Seek>(
 ) -> Result<ObjectDefinitionSegment, Error> {
     handle_object_fields(reader)?;
 
-    let mut last_in_sequence_byte = [0];
-    reader
-        .read_exact(&mut last_in_sequence_byte)
-        .map_err(Error::LastInSequenceFlagReadData)?;
-    let last_in_sequence_flag = LastInSequenceFlag::try_from(last_in_sequence_byte[0])?;
+    let last_in_sequence_flag = LastInSequenceFlag::read(reader)?;
 
     let mut buffer = [0; 3];
     reader.read_exact(&mut buffer).unwrap();
