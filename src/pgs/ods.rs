@@ -92,12 +92,7 @@ pub fn read<Reader: BufRead + Seek>(
     reader: &mut Reader,
     segments_size: usize,
 ) -> Result<ObjectDefinitionSegment, Error> {
-    reader
-        .skip_data(2 + 1)
-        .map_err(Error::SkipObjectIdAndVerNum)?; // _object_id + _object_version_number
-
-    // let _object_id = u16::from_be_bytes(buffer[0..2].try_into().unwrap());
-    // let _object_version_number = buffer[2];
+    handle_object_fields(reader)?;
 
     let mut last_in_sequence_byte = [0];
     reader
@@ -135,4 +130,13 @@ pub fn read<Reader: BufRead + Seek>(
     } else {
         Err(Error::LastInSequenceFlagNotManaged(last_in_sequence_flag))
     }
+}
+
+// Handle `Object ID` and `Object Version Number` fields by skip it.
+// They are not useful for current subtitle management.
+fn handle_object_fields<Reader: BufRead + Seek>(reader: &mut Reader) -> Result<(), Error> {
+    reader
+        .skip_data(2 + 1)
+        .map_err(Error::SkipObjectIdAndVerNum)?;
+    Ok(())
 }
