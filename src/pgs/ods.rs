@@ -24,6 +24,14 @@ pub enum Error {
     #[error("Skipping `Object ID` and `Object Version Number`")]
     SkipObjectIdAndVerNum(#[source] ReadError),
 
+    /// Failed during read `Width` of the image.
+    #[error("Read With of the image incarried by the `Object Definition Segment`(s)")]
+    ReadWidth(#[source] io::Error),
+
+    /// Failed during read `Height` of the image.
+    #[error("Read Height of the image incarried by the `Object Definition Segment`(s)")]
+    ReadHeight(#[source] io::Error),
+
     /// The read of object data failed.
     #[error("Try reading object data (buffer size: {buff_size})")]
     ObjectData {
@@ -110,11 +118,7 @@ pub fn read<Reader: BufRead + Seek>(
     let mut buffer = [0; 3];
     reader.read_exact(&mut buffer).unwrap();
     let object_data_length = u24::from(<&[u8] as TryInto<[u8; 3]>>::try_into(&buffer).unwrap());
-    let mut buffer = [0; 2];
-    reader.read_exact(&mut buffer).unwrap();
-    let width = u16::from_be_bytes(buffer);
-    reader.read_exact(&mut buffer).unwrap();
-    let height = u16::from_be_bytes(buffer);
+    let (width, height) = read_img_size(reader)?;
 
     if last_in_sequence_flag == LastInSequenceFlag::FirstAndLast {
         let data_size: usize = object_data_length.to_u32().try_into().unwrap();
@@ -146,4 +150,14 @@ fn handle_object_fields<Reader: BufRead + Seek>(reader: &mut Reader) -> Result<(
         .skip_data(2 + 1)
         .map_err(Error::SkipObjectIdAndVerNum)?;
     Ok(())
+}
+
+// Read the image size (width and height) fields.
+fn read_img_size<Reader: BufRead + Seek>(reader: &mut Reader) -> Result<(u16, u16), Error> {
+    let mut buffer = [0; 2];
+    reader.read_exact(&mut buffer).map_err(Error::ReadWidth)?;
+    let width = u16::from_be_bytes(buffer);
+    reader.read_exact(&mut buffer).map_err(Error::ReadHeight)?;
+    let height = u16::from_be_bytes(buffer);
+    Ok((width, height))
 }
