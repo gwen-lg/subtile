@@ -24,6 +24,10 @@ pub enum Error {
     #[error("Skipping `Object ID` and `Object Version Number`")]
     SkipObjectIdAndVerNum(#[source] ReadError),
 
+    /// Failed during `Object Data Length` reading.
+    #[error("Read `Object Data Length` field.")]
+    ReadObjectDataLength(#[source] io::Error),
+
     /// Failed during read `Width` of the image.
     #[error("Read With of the image incarried by the `Object Definition Segment`(s)")]
     ReadWidth(#[source] io::Error),
@@ -114,15 +118,12 @@ pub fn read<Reader: BufRead + Seek>(
     handle_object_fields(reader)?;
 
     let last_in_sequence_flag = LastInSequenceFlag::read(reader)?;
+    let data_size = read_obj_data_length(reader)?;
+    let data_size = data_size - 4; // don't know why for now !!! Object Data Length include Width + Height ?
 
-    let mut buffer = [0; 3];
-    reader.read_exact(&mut buffer).unwrap();
-    let object_data_length = u24::from(<&[u8] as TryInto<[u8; 3]>>::try_into(&buffer).unwrap());
     let (width, height) = read_img_size(reader)?;
 
     if last_in_sequence_flag == LastInSequenceFlag::FirstAndLast {
-        let data_size: usize = object_data_length.to_u32().try_into().unwrap();
-        let data_size = data_size - 4; // don't know why for now !!! Object Data Length include Width + Height ?
         assert!(segments_size == 11 + data_size);
 
         let mut object_data = vec![0; data_size];
@@ -150,6 +151,16 @@ fn handle_object_fields<Reader: BufRead + Seek>(reader: &mut Reader) -> Result<(
         .skip_data(2 + 1)
         .map_err(Error::SkipObjectIdAndVerNum)?;
     Ok(())
+}
+
+// Read the `Object Data Length` field and return value in `usize`.
+fn read_obj_data_length<Reader: BufRead + Seek>(reader: &mut Reader) -> Result<usize, Error> {
+    let mut buffer = [0; 3];
+    reader
+        .read_exact(&mut buffer)
+        .map_err(Error::ReadObjectDataLength)?;
+    let object_data_length = u24::from(<&[u8] as TryInto<[u8; 3]>>::try_into(&buffer).unwrap());
+    Ok(object_data_length.to_u32().try_into().unwrap())
 }
 
 // Read the image size (width and height) fields.
