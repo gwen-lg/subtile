@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/gwen-lg/subtile/compare/v0.3.1...v0.3.2) - 2025-01-12
+
+### Added
+
+- *(ods)* manage object data split in multiple segment
+
+### Fixed
+
+- *(pgs)* skip_segment content in DecodeTimeOnly
+
+### Other
+
+- *(release-plz)* update github action from v0.3.112
+- *(ods)* create read_object_data function
+- *(ods)* move ObjectDataLength reading in dedicated function
+- *(ods)* move image size fields reading in a dedicated function
+- *(ods)* move last_in_sequence_flag field handling into a method
+- *(ods)* move object fields handling into a function
+- *(pgs)* add only_one.sup fixtures and associate test
+
 ## [0.3.1](https://github.com/gwen-lg/subtile/compare/v0.3.0...v0.3.1) - 2025-01-06
 
 ### Fixed
