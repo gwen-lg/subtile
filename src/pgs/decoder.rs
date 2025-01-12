@@ -87,15 +87,15 @@ impl PgsDecoder for DecodeTimeImage {
                 read_header(reader).transpose()
             }
         } {
-            let header = segment?;
-            match header.type_code() {
+            let seg_header = segment?;
+            match seg_header.type_code() {
                 SegmentTypeCode::Pds => {
-                    let seg_size = header.size() as usize;
+                    let seg_size = seg_header.size() as usize;
                     let pds = pds::read(reader, seg_size)?;
                     palette = Some(pds.palette);
                 }
                 SegmentTypeCode::Ods => {
-                    let seg_size = header.size() as usize;
+                    let seg_size = seg_header.size() as usize;
                     let ods = ods::read(reader, seg_size, prev_ods.take())?;
 
                     // If data are complete, construct `image` from palette and image data
@@ -113,7 +113,7 @@ impl PgsDecoder for DecodeTimeImage {
                     }
                 }
                 SegmentTypeCode::End => {
-                    let time = TimePoint::from_msecs(i64::from(header.presentation_time()));
+                    let time = TimePoint::from_msecs(i64::from(seg_header.presentation_time()));
 
                     if let Some(start_time) = start_time {
                         let times = TimeSpan::new(start_time, time);
@@ -126,7 +126,7 @@ impl PgsDecoder for DecodeTimeImage {
                 }
                 _ => {
                     // Segment not taken into account are skipped
-                    skip_segment(reader, &header)?;
+                    skip_segment(reader, &seg_header)?;
                 }
             };
         }
