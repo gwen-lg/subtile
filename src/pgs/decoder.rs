@@ -36,14 +36,13 @@ impl PgsDecoder for DecodeTimeOnly {
         let mut start_time = None;
         let mut subtitle = None;
 
-        while let Some(segment_header) = {
+        while let Some(seg_header) = {
             if subtitle.is_some() {
                 None
             } else {
-                read_header(reader).transpose()
+                read_header(reader)?
             }
         } {
-            let seg_header = segment_header?;
             match seg_header.type_code() {
                 SegmentTypeCode::End => {
                     let time = TimePoint::from_msecs(i64::from(seg_header.presentation_time()));
@@ -80,14 +79,13 @@ impl PgsDecoder for DecodeTimeImage {
         let mut image = None;
         let mut prev_ods = None;
 
-        while let Some(segment) = {
+        while let Some(seg_header) = {
             if subtitle.is_some() {
                 None
             } else {
-                read_header(reader).transpose()
+                read_header(reader)?
             }
         } {
-            let seg_header = segment?;
             match seg_header.type_code() {
                 SegmentTypeCode::Pds => {
                     let seg_size = seg_header.size() as usize;
