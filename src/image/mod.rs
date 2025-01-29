@@ -2,11 +2,13 @@
 mod pixels;
 mod utils;
 
+// Re-export some useful image types.
+pub use image::{GrayImage, Luma};
 pub use pixels::{luma_a_to_luma, luma_a_to_luma_convertor};
 pub use utils::{dump_images, DumpError};
 
 use crate::content::Area;
-use image::{GrayImage, ImageBuffer, Luma, Pixel};
+use image::{ImageBuffer, Pixel};
 
 /// Define access to Size of an Image. Used for Subtitle content.
 pub trait ImageSize {
