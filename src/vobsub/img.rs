@@ -13,7 +13,7 @@ use nom::{
 };
 use thiserror::Error;
 
-use super::{IResultExt, NomError, VobSubError};
+use super::{palette::PaletteLuma, IResultExt, NomError, VobSubError};
 use crate::{
     content::{Area, Size},
     image::{ImageArea, ImageSize, ToImage, ToOcrImage, ToOcrImageOpt},
@@ -361,13 +361,13 @@ where
 /// A struct to convert [`VobSubIndexedImage`] to image for `OCR`
 pub struct VobSubOcrImage<'a> {
     indexed_img: &'a VobSubIndexedImage,
-    palette: &'a [f32; 16],
+    palette: &'a PaletteLuma,
 }
 
 impl<'a> VobSubOcrImage<'a> {
     /// create the image converter.
     #[must_use]
-    pub const fn new(indexed_img: &'a VobSubIndexedImage, palette: &'a [f32; 16]) -> Self {
+    pub const fn new(indexed_img: &'a VobSubIndexedImage, palette: &'a PaletteLuma) -> Self {
         Self {
             indexed_img,
             palette,
@@ -376,13 +376,14 @@ impl<'a> VobSubOcrImage<'a> {
 
     // Compute the output palette color
     fn compute_palette_color(&self, opt: ToOcrImageOpt) -> [Luma<u8>; 4] {
+        const LUMA_BLACK: [u8; 1] = [0; 1];
         self.indexed_img
             .palette()
             .into_iter_fixed()
             .zip(self.indexed_img.alpha())
             .map(|(&palette_idx, &alpha)| (self.palette[palette_idx as usize], alpha))
             .map(|(luminance, alpha)| {
-                if alpha > 0 && luminance > 0. {
+                if alpha > 0 && luminance.0 > LUMA_BLACK {
                     opt.text_color
                 } else {
                     opt.background_color

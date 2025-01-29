@@ -1,4 +1,4 @@
-use image::Rgb;
+use image::{Luma, Pixel, Rgb};
 use nom::{
     bytes::complete::{tag, take_while_m_n},
     combinator::map_res,
@@ -68,6 +68,15 @@ pub fn palette(input: &[u8]) -> IResult<&[u8], Palette> {
         Ok(result)
     })(input);
     res
+}
+
+/// The 16-luminance palette gene.
+pub type PaletteLuma = [Luma<u8>; 16];
+
+/// Convert an sRGB palette to a luminance palette.
+#[must_use]
+pub fn palette_rgb_to_luminance(palette: &Palette) -> PaletteLuma {
+    palette.map(|rgb| rgb.to_luma())
 }
 
 #[cfg(test)]

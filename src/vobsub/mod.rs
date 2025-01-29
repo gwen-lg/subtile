@@ -77,7 +77,7 @@ mod sub;
 pub use self::{
     idx::{read_palette, Index},
     img::{conv_to_rgba, VobSubIndexedImage, VobSubOcrImage, VobSubToImage},
-    palette::{palette, Palette},
+    palette::{palette, palette_rgb_to_luminance, Palette},
     probe::{is_idx_file, is_sub_file},
     sub::ErrorMissing,
 };
