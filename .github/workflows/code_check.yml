@@ -41,6 +41,8 @@ jobs:
       - name: Install cargo-readme
         run: cargo install cargo-readme
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Check spelling of entire workspace
         id: typos_check
         if: $${{ always() }}
