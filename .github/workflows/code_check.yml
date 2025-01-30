@@ -64,17 +64,17 @@ jobs:
         env:
           RUSTDOCFLAGS: "-D warnings"
         if: $${{ always() }}
-        run: cargo doc
+        run: cargo doc --locked
 
       - name: "Cargo clippy"
         id: cargo_clippy
         if: $${{ always() }}
-        run: cargo clippy --profile=test
+        run: cargo clippy --profile=test --locked
 
       - name: "Cargo test"
         id: cargo_test
         if: $${{ always() }}
-        run: cargo test
+        run: cargo test --locked
 
       - name: "Some checks failed"
         if: ${{ failure() }}
