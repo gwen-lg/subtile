@@ -41,22 +41,10 @@ jobs:
       - name: Install cargo-readme
         run: cargo install cargo-readme
 
-      - name: Check if readme is up to date
-        id: cargo_readme
+      - name: Check spelling of entire workspace
+        id: typos_check
         if: $${{ always() }}
-        run: diff README.md <(cargo readme)
-
-      - name: "Cargo clippy"
-        id: cargo_clippy
-        if: $${{ always() }}
-        run: |
-          cargo clippy --profile=test
-
-      - name: "Cargo test"
-        id: cargo_test
-        if: $${{ always() }}
-        run: |
-          cargo test
+        uses: crate-ci/typos@master
 
       - name: "Cargo formatting"
         id: cargo_fmt
@@ -64,18 +52,27 @@ jobs:
         run: |
           cargo fmt --all -- --check
 
+      - name: Check if readme is up to date
+        id: cargo_readme
+        if: $${{ always() }}
+        run: diff README.md <(cargo readme)
+
       - name: "Cargo doc"
         id: cargo_doc
         env:
           RUSTDOCFLAGS: "-D warnings"
         if: $${{ always() }}
-        run: |
-          cargo doc
+        run: cargo doc
 
-      - name: Check spelling of entire workspace
-        id: typos_check
+      - name: "Cargo clippy"
+        id: cargo_clippy
         if: $${{ always() }}
-        uses: crate-ci/typos@master
+        run: cargo clippy --profile=test
+
+      - name: "Cargo test"
+        id: cargo_test
+        if: $${{ always() }}
+        run: cargo test
 
       - name: "Some checks failed"
         if: ${{ failure() }}
@@ -84,12 +81,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "|Job|Status|" >> $GITHUB_STEP_SUMMARY
           echo "|---|------|" >> $GITHUB_STEP_SUMMARY
+          echo "|typos|${{ steps.typos_check.outcome}}|" >> $GITHUB_STEP_SUMMARY
+          echo "|Cargo fmt|${{ steps.cargo_fmt.outcome }}|" >> $GITHUB_STEP_SUMMARY
           echo "|Cargo readme|${{ steps.cargo_readme.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|Cargo doc|${{ steps.cargo_doc.outcome }}|" >> $GITHUB_STEP_SUMMARY
           echo "|Cargo clippy|${{ steps.cargo_clippy.outcome }}|" >> $GITHUB_STEP_SUMMARY
           echo "|Cargo test|${{ steps.cargo_test.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo fmt|${{ steps.cargo_fmt.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo doc|${{ steps.cargo_doc.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|typos|${{ steps.typos_check.outcome}}|" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Please check the failed jobs and fix where needed." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
