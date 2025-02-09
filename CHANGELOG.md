@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3](https://github.com/gwen-lg/subtile/compare/v0.3.2...v0.3.3) - 2025-02-09
+
+### Other
+
+- *(github)* add FUNDING.yml file with liberapay account
+- *(commits)* add check-commits on push
+- *(commits)* add workflow to check individual commits
+- *(code_check)* use locked flag for reduce time
+- *(code_check)* add rust-cache action
+- *(code_check)* reorder steps with typos/fmt at first.
+
 ## [0.3.2](https://github.com/gwen-lg/subtile/compare/v0.3.1...v0.3.2) - 2025-01-12
 
 ### Added
