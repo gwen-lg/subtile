@@ -65,12 +65,16 @@ impl Neg for TimePoint {
     }
 }
 
-impl fmt::Display for TimePoint {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl TimePoint {
+    ///TODO
+    /// # Errors
+    ///
+    /// Will return error of writing if happen.
+    pub fn fmt_separator(&self, f: &mut fmt::Formatter<'_>, separator: char) -> fmt::Result {
         let t = if self.0 < 0 { -*self } else { *self };
         write!(
             f,
-            "{}{:02}:{:02}:{:02},{:03}",
+            "{}{:02}:{:02}:{:02}{separator}{:03}",
             if self.0 < 0 { "-" } else { "" },
             t.hours(),
             t.mins_comp(),
