@@ -3,6 +3,30 @@ use std::io;
 
 use crate::time::TimeSpan;
 
+#[repr(transparent)]
+pub struct TimePointSrt(TimePoint);
+
+impl From<TimePoint> for TimePointSrt {
+    fn from(value: TimePoint) -> Self {
+        Self(value)
+    }
+}
+
+impl fmt::Display for TimePoint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let t = if self.0 < 0 { -*self } else { *self };
+        write!(
+            f,
+            "{}{:02}:{:02}:{:02},{:03}",
+            if self.0 < 0 { "-" } else { "" },
+            t.hours(),
+            t.mins_comp(),
+            t.secs_comp(),
+            t.msecs_comp()
+        )
+    }
+}
+
 /// Write subtitles in `srt` format
 /// # Errors
 ///
