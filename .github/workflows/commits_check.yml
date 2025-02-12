@@ -28,7 +28,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   check-push-commits:
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' && github.event.commits }}
     strategy:
       matrix:
         commit: ${{ github.event.commits }}
