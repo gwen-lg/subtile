@@ -17,7 +17,7 @@
 //! let idx = subtile::vobsub::Index::open("./fixtures/example.idx").unwrap();
 //! for sub in idx.subtitles::<(TimeSpan, VobSubIndexedImage)>() {
 //!     let (time_span, image) = sub.unwrap();
-//!     println!("Time: {:0.3}-{:0.3}", time_span.start, time_span.end);
+//!     println!("Time: {:0.3?}-{:0.3?}", time_span.start, time_span.end);
 //!     //println!("Always show: {:?}", sub.force());
 //!     let area = image.area();
 //!     println!("At: {}, {}", area.left(), area.top());
