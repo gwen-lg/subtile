@@ -28,6 +28,7 @@ pub mod srt;
 pub mod time;
 mod util;
 pub mod vobsub;
+pub mod webvtt;
 
 pub use errors::SubtileError;
 pub use pgs::SupParser;
