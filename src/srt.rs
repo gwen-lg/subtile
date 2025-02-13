@@ -30,19 +30,25 @@ pub fn write_srt(
     subtitles
         .iter()
         .enumerate()
-        .try_for_each(write_srt_line(writer))?;
+        .try_for_each(|(idx, (time_span, text))| {
+            let line_num = idx + 1;
+            write_line(writer, line_num, time_span, text.as_str())
+        })?;
 
     Ok(())
 }
 
-/// Write an subtitle line in `srt` format
-fn write_srt_line(
+/// Write a subtitle line in `srt` format
+/// # Errors
+///
+/// Will return `Err` if writing in `writer` return an `Err`.
+pub fn write_line(
     writer: &mut impl io::Write,
-) -> impl FnMut((usize, &(TimeSpan, String))) -> Result<(), io::Error> + '_ {
-    |(idx, (time_span, text))| {
-        let line_num = idx + 1;
-        let start = TimePointSrt(time_span.start);
-        let end = TimePointSrt(time_span.end);
-        writeln!(writer, "{line_num}\n{start} --> {end}\n{text}")
-    }
+    line_idx: usize,
+    time: &TimeSpan,
+    text: &str,
+) -> Result<(), io::Error> {
+    let start = TimePointSrt(time.start);
+    let end = TimePointSrt(time.end);
+    writeln!(writer, "{line_idx}\n{start} --> {end}\n{text}")
 }
