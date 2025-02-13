@@ -1,8 +1,9 @@
 //! SubRip/Srt functionality
-use std::io;
+use std::{fmt, io};
 
-use crate::time::TimeSpan;
+use crate::time::{TimePoint, TimeSpan};
 
+/// Extend `TimePoint` for implement `Srt` specific `Display`.
 #[repr(transparent)]
 pub struct TimePointSrt(TimePoint);
 
@@ -12,18 +13,9 @@ impl From<TimePoint> for TimePointSrt {
     }
 }
 
-impl fmt::Display for TimePoint {
+impl fmt::Display for TimePointSrt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let t = if self.0 < 0 { -*self } else { *self };
-        write!(
-            f,
-            "{}{:02}:{:02}:{:02},{:03}",
-            if self.0 < 0 { "-" } else { "" },
-            t.hours(),
-            t.mins_comp(),
-            t.secs_comp(),
-            t.msecs_comp()
-        )
+        self.0.fmt_separator(f, ',')
     }
 }
 
@@ -49,8 +41,8 @@ fn write_srt_line(
 ) -> impl FnMut((usize, &(TimeSpan, String))) -> Result<(), io::Error> + '_ {
     |(idx, (time_span, text))| {
         let line_num = idx + 1;
-        let start = time_span.start;
-        let end = time_span.end;
+        let start = TimePointSrt(time_span.start);
+        let end = TimePointSrt(time_span.end);
         writeln!(writer, "{line_num}\n{start} --> {end}\n{text}")
     }
 }

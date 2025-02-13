@@ -1,3 +1,4 @@
+use core::fmt;
 use std::ops::Neg;
 
 /// Define a time in milliseconds
@@ -61,6 +62,25 @@ impl Neg for TimePoint {
     type Output = Self;
     fn neg(self) -> Self {
         Self(-self.0)
+    }
+}
+
+impl TimePoint {
+    ///TODO
+    /// # Errors
+    ///
+    /// Will return error of writing if happen.
+    pub fn fmt_separator(&self, f: &mut fmt::Formatter<'_>, separator: char) -> fmt::Result {
+        let t = if self.0 < 0 { -*self } else { *self };
+        write!(
+            f,
+            "{}{:02}:{:02}:{:02}{separator}{:03}",
+            if self.0 < 0 { "-" } else { "" },
+            t.hours(),
+            t.mins_comp(),
+            t.secs_comp(),
+            t.msecs_comp()
+        )
     }
 }
 
