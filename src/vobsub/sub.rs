@@ -27,7 +27,7 @@ use nom::{
     sequence::{preceded, Tuple},
     IResult,
 };
-use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
+use std::{cmp::Ordering, fmt::Debug, iter::FusedIterator, marker::PhantomData};
 use thiserror::Error;
 
 /// Parse four 4-bit palette entries.
@@ -412,6 +412,7 @@ impl<D> Iterator for VobsubParser<'_, D> {
         Some(subtitle)
     }
 }
+impl<D> FusedIterator for VobsubParser<'_, D> {}
 
 #[cfg(test)]
 mod tests {

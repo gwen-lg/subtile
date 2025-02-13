@@ -2,6 +2,7 @@ use super::{PgsDecoder, PgsError};
 use std::{
     fs::{self, File},
     io::{BufRead, BufReader, Seek},
+    iter::FusedIterator,
     marker::PhantomData,
     path::Path,
 };
@@ -61,6 +62,13 @@ where
     fn size_hint(&self) -> (usize, Option<usize>) {
         (500, None)
     }
+}
+
+impl<Reader, Decoder> FusedIterator for SupParser<Reader, Decoder>
+where
+    Reader: BufRead + Seek,
+    Decoder: PgsDecoder,
+{
 }
 
 #[cfg(test)]
