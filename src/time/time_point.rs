@@ -30,7 +30,9 @@ impl TimePoint {
         self.0 as f64 / 1000.
     }
 
-    const fn msecs(self) -> i64 {
+    /// Get milliseconds corresponding to `TimePoint`.
+    #[must_use]
+    pub const fn msecs(self) -> i64 {
         self.0
     }
 
