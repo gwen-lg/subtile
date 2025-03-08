@@ -15,10 +15,11 @@
 //! };
 //!
 //! let idx = subtile::vobsub::Index::open("./fixtures/example.idx").unwrap();
-//! for sub in idx.subtitles::<(TimeSpan, VobSubIndexedImage)>() {
+//! let sub = subtile::vobsub::Sub::open("./fixtures/example.sub").unwrap();
+//! for sub in sub.subtitles::<(TimeSpan, VobSubIndexedImage)>() {
 //!     let (time_span, image) = sub.unwrap();
 //!     println!("Time: {:0.3?}-{:0.3?}", time_span.start, time_span.end);
-//!     //println!("Always show: {:?}", sub.force());
+//!     //println!("Always show: {:?}", subs.force());
 //!     let area = image.area();
 //!     println!("At: {}, {}", area.left(), area.top());
 //!     println!("Size: {}x{}", image.width(), image.height());
@@ -79,7 +80,7 @@ pub use self::{
     img::{conv_to_rgba, VobSubIndexedImage, VobSubOcrImage, VobSubToImage},
     palette::{palette, palette_rgb_to_luminance, Palette},
     probe::{is_idx_file, is_sub_file},
-    sub::ErrorMissing,
+    sub::{ErrorMissing, Sub},
 };
 
 use crate::content::ContentError;

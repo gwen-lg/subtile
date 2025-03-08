@@ -27,7 +27,9 @@ use nom::{
     sequence::{preceded, Tuple},
     IResult,
 };
-use std::{cmp::Ordering, fmt::Debug, iter::FusedIterator, marker::PhantomData};
+use std::{
+    cmp::Ordering, fmt::Debug, fs, io::Read, iter::FusedIterator, marker::PhantomData, path::Path,
+};
 use thiserror::Error;
 
 /// Parse four 4-bit palette entries.
@@ -322,6 +324,42 @@ macro_rules! try_iter {
     };
 }
 
+/// Store the content of a `*.sub` file.
+pub struct Sub {
+    /// Our compressed subtitle data.
+    data: Vec<u8>,
+}
+impl Sub {
+    /// Init a `Sub` from a file path.
+    ///
+    /// # Errors
+    ///
+    /// Will return `VobSubError::Io` if not able to read a file from `path`.
+    pub fn open<P>(path: P) -> Result<Self, VobSubError>
+    where
+        P: AsRef<Path> + Clone,
+    {
+        let mut sub = fs::File::open(path.as_ref()).map_err(|source| VobSubError::Io {
+            source,
+            path: path.as_ref().to_path_buf(),
+        })?;
+        let mut data = vec![];
+        sub.read_to_end(&mut data)
+            .map_err(|source| VobSubError::Io {
+                source,
+                path: path.as_ref().to_path_buf(),
+            })?;
+        Ok(Self { data })
+    }
+
+    /// Iterate over the subtitles associated with this `*.idx` file.
+    #[must_use]
+    #[allow(clippy::missing_const_for_fn)]
+    pub fn subtitles<D>(&self) -> VobsubParser<D> {
+        VobsubParser::new(&self.data)
+    }
+}
+
 /// An internal iterator over subtitles.  These subtitles may not have a
 /// valid `end_time`, so we'll try to fix them up before letting the user
 /// see them.
@@ -417,7 +455,6 @@ impl<D> FusedIterator for VobsubParser<'_, D> {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vobsub::idx;
 
     #[test]
     fn parse_palette_entries() {
@@ -552,9 +589,9 @@ mod tests {
     #[test]
     fn parse_subtitles_from_subtitle_edit() {
         //use env_logger;
-        use idx::Index;
+
         //let _ = env_logger::init();
-        let idx = Index::open("./fixtures/tiny.idx").unwrap();
+        let idx = Sub::open("./fixtures/tiny.sub").unwrap();
         let mut subs = idx.subtitles::<TimeSpan>();
         subs.next().expect("missing sub").unwrap();
         assert!(subs.next().is_none());
@@ -563,18 +600,17 @@ mod tests {
     #[test]
     fn parse_fuzz_corpus_seeds() {
         //use env_logger;
-        use idx::Index;
         //let _ = env_logger::init();
 
         // Make sure these two fuzz corpus inputs still work, and that they
         // return the same subtitle data.
-        let tiny = Index::open("./fixtures/tiny.idx")
+        let tiny = Sub::open("./fixtures/tiny.sub")
             .unwrap()
             .subtitles::<TimeSpan>()
             .next()
             .unwrap()
             .unwrap();
-        let split = Index::open("./fixtures/tiny-split.idx")
+        let split = Sub::open("./fixtures/tiny-split.sub")
             .unwrap()
             .subtitles::<TimeSpan>()
             .next()
