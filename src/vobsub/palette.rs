@@ -3,8 +3,7 @@ use nom::{
     bytes::complete::{tag, take_while_m_n},
     combinator::map_res,
     multi::separated_list0,
-    sequence::tuple,
-    IResult,
+    IResult, Parser,
 };
 
 use super::VobSubError;
@@ -39,12 +38,13 @@ fn hex_primary(input: &[u8]) -> IResult<&[u8], u8> {
     map_res(
         take_while_m_n(2, 2, |c: u8| c.is_ascii_hexdigit()),
         from_hex,
-    )(input)
+    )
+    .parse(input)
 }
 
 /// Parse a 3-byte hexadecimal `RGB` color.
 fn hex_rgb(input: &[u8]) -> IResult<&[u8], Rgb<u8>> {
-    let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
+    let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
 
     Ok((input, Rgb([red, green, blue])))
 }
@@ -57,16 +57,21 @@ pub type Palette = [Rgb<u8>; 16];
 ///
 /// Will return `Err` if the input don't have 16 entries.
 pub fn palette(input: &[u8]) -> IResult<&[u8], Palette> {
-    let res = map_res(separated_list0(tag(b", "), hex_rgb), |vec: Vec<Rgb<u8>>| {
-        if vec.len() != 16 {
-            return Err(VobSubError::PaletteInvalidEntriesNumbers(vec.len()));
-        }
-        // Coerce vector to known-size slice.  Based on
-        // http://stackoverflow.com/q/25428920/12089.
-        let mut result = [Rgb([0, 0, 0]); 16];
-        <[Rgb<u8>; 16] as AsMut<_>>::as_mut(&mut result).clone_from_slice(&vec[0..16]);
-        Ok(result)
-    })(input);
+    const SEPARATOR_TAG: &[u8] = b", ";
+    let res = map_res(
+        separated_list0(tag(SEPARATOR_TAG), hex_rgb),
+        |vec: Vec<Rgb<u8>>| {
+            if vec.len() != 16 {
+                return Err(VobSubError::PaletteInvalidEntriesNumbers(vec.len()));
+            }
+            // Coerce vector to known-size slice.  Based on
+            // http://stackoverflow.com/q/25428920/12089.
+            let mut result = [Rgb([0, 0, 0]); 16];
+            <[Rgb<u8>; 16] as AsMut<_>>::as_mut(&mut result).clone_from_slice(&vec[0..16]);
+            Ok(result)
+        },
+    )
+    .parse(input);
     res
 }
 

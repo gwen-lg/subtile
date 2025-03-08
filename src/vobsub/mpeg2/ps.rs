@@ -9,8 +9,7 @@ use nom::{
         complete::{tag as tag_bits, take as take_bits},
     },
     bytes::complete::tag as tag_bytes,
-    sequence::Tuple,
-    IResult,
+    IResult, Parser,
 };
 use std::fmt;
 
@@ -45,7 +44,8 @@ impl fmt::Display for Header {
 /// Parse a Program Stream header.
 pub fn header(input: &[u8]) -> IResult<&[u8], Header> {
     // Sync bytes.
-    let tag1 = tag_bytes(&[0x00, 0x00, 0x01, 0xba]);
+    const PS_HEADER_TAG: &[u8] = &[0x00, 0x00, 0x01, 0xba];
+    let tag1 = tag_bytes(PS_HEADER_TAG);
 
     // 10-byte header.
     let header_parse = bits(|input| {

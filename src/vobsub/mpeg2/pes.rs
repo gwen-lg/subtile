@@ -4,16 +4,18 @@
 //! in a `*.sub` file.
 
 use nom::{
-    bits,
-    bits::complete::{tag as tag_bits, take},
+    bits::{
+        self, bits,
+        complete::{tag as tag_bits, take},
+    },
     branch::alt,
     bytes::complete::tag as tag_bytes,
     combinator::{map, rest, value},
     multi::length_value,
     number::complete::{be_u16, be_u8},
     //do_parse, length_value, named, rest,
-    sequence::Tuple,
     IResult,
+    Parser,
 };
 use std::fmt;
 
@@ -43,7 +45,8 @@ fn pts_dts_flags(input: (&[u8], usize)) -> IResult<(&[u8], usize), PtsDtsFlags> 
         value(PtsDtsFlags::None, tag_bits(0b00, 2u8)),
         value(PtsDtsFlags::Pts, tag_bits(0b10, 2u8)),
         value(PtsDtsFlags::PtsDts, tag_bits(0b11, 2u8)),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 /// Presentation and Decode Time Stamps, if available.
@@ -103,7 +106,7 @@ pub struct HeaderDataFlags {
 
 /// Deserialize a single Boolean flag bit.
 fn bool_flag(input: (&[u8], usize)) -> IResult<(&[u8], usize), bool> {
-    map(|input| bits::complete::take(1u8)(input), |b: u8| b == 1)(input)
+    map(|input| bits::complete::take(1u8)(input), |b: u8| b == 1).parse(input)
 }
 
 /// Deserialize `HeaderDataFlags`
@@ -162,7 +165,8 @@ fn header_data(input: &[u8]) -> IResult<&[u8], HeaderData> {
     // call `header_data_fields` to do the actual parse.  This ensures
     // that if `header_data_fields` doesn't parse all the header data,
     // we discard the rest before continuing.
-    let (input, pts_dts) = length_value(be_u8, |input| pts_dts(input, flags.pts_dts_flags))(input)?;
+    let (input, pts_dts) =
+        length_value(be_u8, |input| pts_dts(input, flags.pts_dts_flags)).parse(input)?;
     Ok((input, HeaderData { flags, pts_dts }))
 }
 
@@ -246,7 +250,8 @@ fn packet_helper(input: &[u8]) -> IResult<&[u8], Packet> {
 }
 
 pub fn packet(input: &[u8]) -> IResult<&[u8], Packet> {
-    let packet_tag = tag_bytes(&[0x00, 0x00, 0x01, 0xbd]);
+    const PACKET_TAG: &[u8] = &[0x00, 0x00, 0x01, 0xbd];
+    let packet_tag = tag_bytes(PACKET_TAG);
     let packet_data = length_value(be_u16, packet_helper);
     let (input, (_, packet)) = (packet_tag, packet_data).parse(input)?;
 

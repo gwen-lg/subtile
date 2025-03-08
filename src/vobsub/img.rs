@@ -8,8 +8,8 @@ use nom::{
     bits::complete::{tag as tag_bits, take as take_bits},
     branch::alt,
     combinator::value,
-    sequence::{preceded, Tuple},
-    IResult,
+    sequence::preceded,
+    IResult, Parser,
 };
 use thiserror::Error;
 
@@ -136,7 +136,7 @@ fn count(input: (&[u8], usize)) -> IResult<(&[u8], usize), u16> {
     let count2 = preceded(tag_bits(0, 2u8), take_bits(4u16));
     // Count for 1-nibble RLE.
     let count1 = take_bits(2u16);
-    alt((end_of_line, count4, count3, count2, count1))(input)
+    alt((end_of_line, count4, count3, count2, count1)).parse(input)
 }
 
 /// Parse an `Rle`.

@@ -19,13 +19,15 @@ use log::{trace, warn};
 use nom::{
     bits::{bits, complete::take as take_bits},
     branch::alt,
-    bytes,
-    bytes::complete::{tag as tag_bytes, take_until},
+    bytes::{
+        self,
+        complete::{tag as tag_bytes, take_until},
+    },
     combinator::{map, value},
     multi::{count, many_till},
     number::complete::be_u16,
-    sequence::{preceded, Tuple},
-    IResult,
+    sequence::preceded,
+    IResult, Parser,
 };
 use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
 use thiserror::Error;
@@ -94,24 +96,31 @@ enum ControlCommand<'a> {
 
 /// Parse a single command in a control sequence.
 fn control_command(input: &[u8]) -> IResult<&[u8], ControlCommand> {
+    const TAG_FORCE: &[u8] = &[0x00];
+    const TAG_START_DATE: &[u8] = &[0x01];
+    const TAG_STOP_DATE: &[u8] = &[0x02];
+    const TAG_PALETTE: &[u8] = &[0x03];
+    const TAG_ALPHA: &[u8] = &[0x04];
+    const TAG_COORDINATES: &[u8] = &[0x05];
+    const TAG_RLEOFFSETS: &[u8] = &[0x06];
     alt((
-        value(ControlCommand::Force, tag_bytes(&[0x00])),
-        value(ControlCommand::StartDate, tag_bytes(&[0x01])),
-        value(ControlCommand::StopDate, tag_bytes(&[0x02])),
+        value(ControlCommand::Force, tag_bytes(TAG_FORCE)),
+        value(ControlCommand::StartDate, tag_bytes(TAG_START_DATE)),
+        value(ControlCommand::StopDate, tag_bytes(TAG_STOP_DATE)),
         map(
-            preceded(tag_bytes(&[0x03]), palette_entries),
+            preceded(tag_bytes(TAG_PALETTE), palette_entries),
             ControlCommand::Palette,
         ),
         map(
-            preceded(tag_bytes(&[0x04]), palette_entries),
+            preceded(tag_bytes(TAG_ALPHA), palette_entries),
             ControlCommand::Alpha,
         ),
         map(
-            preceded(tag_bytes(&[0x05]), area),
+            preceded(tag_bytes(TAG_COORDINATES), area),
             ControlCommand::Coordinates,
         ),
         map(
-            preceded(tag_bytes(&[0x06]), rle_offsets),
+            preceded(tag_bytes(TAG_RLEOFFSETS), rle_offsets),
             ControlCommand::RleOffsets,
         ),
         // We only capture this so we have something to log.  Note that we
@@ -119,12 +128,14 @@ fn control_command(input: &[u8]) -> IResult<&[u8], ControlCommand> {
         // that doesn't matter, because we'll use the `next` field of
         // `ControlSequence` to find the next `ControlSequence`.
         map(take_until(&[0xff][..]), ControlCommand::Unsupported),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 /// The end of a control sequence.
 fn control_command_end(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    bytes::complete::tag(&[0xff])(input)
+    const TAG_END: &[u8] = &[0xff];
+    bytes::complete::tag(TAG_END)(input)
 }
 
 /// The control packet for a subtitle.
