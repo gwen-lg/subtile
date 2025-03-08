@@ -57,7 +57,7 @@ pub fn clock(i: (&[u8], usize)) -> IResult<(&[u8], usize), Clock> {
 
     let (input, (hi, _, mid, _, lo, _)): ((&[u8], usize), (u64, _, u64, _, u64, _)) =
         (hi_p, &marker, mid_p, &marker, lo_p, &marker).parse(i)?;
-    let clock = hi << 30 | mid << 15 | lo;
+    let clock = (hi << 30) | (mid << 15) | lo;
     Ok((input, Clock::base(clock)))
 }
 

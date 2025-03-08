@@ -166,7 +166,10 @@ fn parse_be_u16_as_usize(buff: &[u8]) -> Result<(&[u8], usize), VobSubError> {
     if buff.len() < 2 {
         Err(VobSubError::BufferTooSmallForU16)
     } else {
-        Ok((&buff[2..], usize::from(buff[0]) << 8 | usize::from(buff[1])))
+        Ok((
+            &buff[2..],
+            (usize::from(buff[0]) << 8) | usize::from(buff[1]),
+        ))
     }
 }
 
@@ -359,7 +362,7 @@ impl<'a, Decoder> VobsubParser<'a, Decoder> {
             return Some(Err(VobSubError::PacketTooShort));
         }
         let wanted =
-            usize::from(first.pes_packet.data[0]) << 8 | usize::from(first.pes_packet.data[1]);
+            (usize::from(first.pes_packet.data[0]) << 8) | usize::from(first.pes_packet.data[1]);
         let mut sub_packet = Vec::with_capacity(wanted);
         sub_packet.extend_from_slice(first.pes_packet.data);
 
