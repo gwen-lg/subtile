@@ -13,7 +13,7 @@ use crate::{time::TimePoint, vobsub::IResultExt};
 
 use super::{
     palette::{palette, DEFAULT_PALETTE},
-    sub, Palette, VobSubError,
+    Palette, VobSubError,
 };
 
 /// Extend `TimePoint` to implement `idx` specific `Display`.
@@ -39,8 +39,6 @@ pub struct Index {
     //size: Size,
     /// The colors used for the subtitles.
     palette: Palette,
-    /// Our compressed subtitle data.
-    sub_data: Vec<u8>,
 }
 
 const PALETTE_KEY: &str = "palette";
@@ -68,41 +66,19 @@ impl Index {
             }
         })?;
 
-        let mut sub_path = path.to_owned();
-        sub_path.set_extension("sub");
-
-        let sub_path = sub_path.as_path();
-        let mut sub = fs::File::open(sub_path).map_err(|source| VobSubError::Io {
-            source,
-            path: sub_path.into(),
-        })?;
-        let mut sub_data = vec![];
-        sub.read_to_end(&mut sub_data)
-            .map_err(|source| VobSubError::Io {
-                source,
-                path: sub_path.into(),
-            })?;
-
-        Ok(Self { palette, sub_data })
+        Ok(Self { palette })
     }
 
     /// Create an Index from a palette and sub data
     #[must_use]
-    pub const fn init(palette: Palette, sub_data: Vec<u8>) -> Self {
-        Self { palette, sub_data }
+    pub const fn init(palette: Palette) -> Self {
+        Self { palette }
     }
 
     /// Get the palette associated with this `*.idx` file.
     #[must_use]
     pub const fn palette(&self) -> &Palette {
         &self.palette
-    }
-
-    /// Iterate over the subtitles associated with this `*.idx` file.
-    #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
-    pub fn subtitles<D>(&self) -> sub::VobsubParser<D> {
-        sub::VobsubParser::new(&self.sub_data)
     }
 }
 
