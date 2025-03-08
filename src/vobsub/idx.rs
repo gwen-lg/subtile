@@ -124,7 +124,7 @@ impl Index {
                         );
                     }
                     LANG_KEY => {
-                        //TODO: reporte missing lang ?
+                        //TODO: report missing lang ?
                         lang = Lang::try_from(val).ok();
                     }
                     _ => trace!("Unimplemented idx key: {key}"),
@@ -139,10 +139,13 @@ impl Index {
         Ok(Self { palette, lang })
     }
 
-    /// Create an Index from a palette and sub data
+    /// Create an Index from a palette
     #[must_use]
-    pub const fn init(palette: Palette, lang: Option<Lang>) -> Self {
-        Self { palette, lang }
+    pub const fn init(palette: Palette) -> Self {
+        Self {
+            palette,
+            lang: None,
+        }
     }
 
     /// Get the palette associated with this `*.idx` file.
