@@ -139,7 +139,7 @@ impl<'a> Iterator for PesPackets<'a> {
                         // data.
                         nom::Err::Incomplete(needed) => {
                             self.remaining = &[];
-                            warn!("Incomplete packet, need: {:?}", needed);
+                            warn!("Incomplete packet, need: {needed:?}");
                             return Some(Err(VobSubError::PESPacket(NomError::IncompleteInput(
                                 needed,
                             ))));

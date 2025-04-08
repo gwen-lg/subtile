@@ -121,7 +121,7 @@ where
                             .map_err(VobSubError::PaletteError)?,
                     );
                 }
-                _ => trace!("Unimplemented idx key: {}", key),
+                _ => trace!("Unimplemented idx key: {key}"),
             }
         }
         buf.clear();

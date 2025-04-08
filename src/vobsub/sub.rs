@@ -224,7 +224,7 @@ where
     // Loop over the individual control sequences.
     let mut control_offset = initial_control_offset;
     loop {
-        trace!("looking for control sequence at: 0x{:x}", control_offset);
+        trace!("looking for control sequence at: 0x{control_offset:x}");
         if control_offset >= raw_data.len() {
             return Err(VobSubError::ControlOffsetBiggerThanPacket {
                 offset: control_offset,
