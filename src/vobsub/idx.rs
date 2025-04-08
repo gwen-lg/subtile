@@ -84,6 +84,7 @@ impl Index {
 
     /// Iterate over the subtitles associated with this `*.idx` file.
     #[must_use]
+    #[allow(clippy::missing_const_for_fn)]
     pub fn subtitles<D>(&self) -> sub::VobsubParser<D> {
         sub::VobsubParser::new(&self.sub_data)
     }
