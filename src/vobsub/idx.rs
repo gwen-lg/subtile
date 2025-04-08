@@ -3,18 +3,34 @@
 use log::trace;
 use regex::Regex;
 use std::{
-    fs,
+    fmt, fs,
     io::{self, prelude::*, BufReader},
     path::Path,
     sync::LazyLock,
 };
 
-use crate::vobsub::IResultExt;
+use crate::{time::TimePoint, vobsub::IResultExt};
 
 use super::{
     palette::{palette, DEFAULT_PALETTE},
     sub, Palette, VobSubError,
 };
+
+/// Extend `TimePoint` to implement `idx` specific `Display`.
+#[repr(transparent)]
+pub struct TimePointIdx(TimePoint);
+
+impl From<TimePoint> for TimePointIdx {
+    fn from(value: TimePoint) -> Self {
+        Self(value)
+    }
+}
+
+impl fmt::Display for TimePointIdx {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt_separator(f, ':')
+    }
+}
 
 /// A `*.idx` file describing the subtitles in a `*.sub` file.
 #[derive(Debug)]
