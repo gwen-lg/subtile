@@ -22,6 +22,7 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 cast = "0.3"
+compact_str = "0.9.0"
 image = { version = "0.25", default-features = false, features = ["png"] }
 iter_fixed = "0.4"
 log = "0.4"

@@ -76,7 +76,7 @@ mod probe;
 mod sub;
 
 pub use self::{
-    idx::{read_palette, Index},
+    idx::Index,
     img::{conv_to_rgba, VobSubIndexedImage, VobSubOcrImage, VobSubToImage},
     palette::{palette, palette_rgb_to_luminance, Palette},
     probe::{is_idx_file, is_sub_file},
@@ -98,6 +98,10 @@ pub enum VobSubError {
     /// We were unable to find a required key in an `*.idx` file.
     #[error("Could not find required key '{0}'")]
     MissingKey(&'static str),
+
+    /// The lang value failed to be parsed
+    #[error("Failed to parse lang in idx file")]
+    LangParsing,
 
     /// We could not parse a value.
     #[error("Could not parse: {0}")]
