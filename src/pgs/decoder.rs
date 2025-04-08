@@ -48,7 +48,7 @@ impl PgsDecoder for DecodeTimeOnly {
                     let time = TimePoint::from_msecs(i64::from(seg_header.presentation_time()));
 
                     if let Some(start_time) = start_time {
-                        subtitle = Some(TimeSpan::new(start_time, time))
+                        subtitle = Some(TimeSpan::new(start_time, time));
                     } else {
                         start_time = Some(time);
                     }
