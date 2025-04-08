@@ -5,14 +5,14 @@ use log::trace;
 use regex::Regex;
 use std::{
     fmt, fs,
-    io::{self, prelude::*, BufReader},
+    io::{self, BufReader, prelude::*},
     path::Path,
     sync::LazyLock,
 };
 
 use super::{
-    palette::{palette, DEFAULT_PALETTE},
     Palette, VobSubError,
+    palette::{DEFAULT_PALETTE, palette},
 };
 use crate::{time::TimePoint, vobsub::IResultExt as _};
 

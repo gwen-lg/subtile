@@ -5,15 +5,15 @@ use image::{ImageBuffer, Luma, Pixel, Rgb, Rgba};
 use iter_fixed::IntoIteratorFixed as _;
 use log::trace;
 use nom::{
+    IResult, Parser as _,
     bits::complete::{tag as tag_bits, take as take_bits},
     branch::alt,
     combinator::value,
     sequence::preceded,
-    IResult, Parser as _,
 };
 use thiserror::Error;
 
-use super::{palette::PaletteLuma, IResultExt as _, NomError, VobSubError};
+use super::{IResultExt as _, NomError, VobSubError, palette::PaletteLuma};
 use crate::{
     content::{Area, Size},
     image::{ImageArea, ImageSize as _, ToImage, ToOcrImage, ToOcrImageOpt},
@@ -24,7 +24,9 @@ use crate::{
 #[derive(Error, Debug)]
 pub enum Error {
     /// If there is more data to write than the space in output.
-    #[error("output parameter is too small (size:{output_size}) for write scanline data (size:{data_size})")]
+    #[error(
+        "output parameter is too small (size:{output_size}) for write scanline data (size:{data_size})"
+    )]
     ToSmallOutput {
         data_size: usize,
         output_size: usize,

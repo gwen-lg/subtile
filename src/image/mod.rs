@@ -5,7 +5,7 @@ mod utils;
 // Re-export some useful image types.
 pub use image::{GrayImage, Luma};
 pub use pixels::{luma_a_to_luma, luma_a_to_luma_convertor};
-pub use utils::{dump_images, DumpError};
+pub use utils::{DumpError, dump_images};
 
 use crate::content::Area;
 use image::{ImageBuffer, Pixel};

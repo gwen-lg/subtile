@@ -1,9 +1,9 @@
 use image::{Luma, Pixel as _, Rgb};
 use nom::{
+    IResult, Parser as _,
     bytes::complete::{tag, take_while_m_n},
     combinator::map_res,
     multi::separated_list0,
-    IResult, Parser as _,
 };
 
 use super::VobSubError;

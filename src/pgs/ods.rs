@@ -1,4 +1,4 @@
-use super::{u24::u24, ReadError, ReadExt as _};
+use super::{ReadError, ReadExt as _, u24::u24};
 use std::{
     fmt::{Debug, Display},
     io::{self, BufRead, Seek},

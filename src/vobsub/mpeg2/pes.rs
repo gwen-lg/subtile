@@ -4,6 +4,7 @@
 //! in a `*.sub` file.
 
 use nom::{
+    IResult,
     bits::{
         self, bits,
         complete::{tag as tag_bits, take},
@@ -12,14 +13,13 @@ use nom::{
     bytes::complete::tag as tag_bytes,
     combinator::{map, rest, value},
     multi::length_value,
-    number::complete::{be_u16, be_u8},
+    number::complete::{be_u8, be_u16},
     //do_parse, length_value, named, rest,
-    IResult,
     Parser as _,
 };
 use std::fmt;
 
-use super::clock::{clock, Clock};
+use super::clock::{Clock, clock};
 use crate::util::BytesFormatter;
 
 /// Possible combinations of `PTS` and `DTS` data which might appear inside a
