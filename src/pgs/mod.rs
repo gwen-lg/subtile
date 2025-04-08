@@ -15,7 +15,7 @@ pub use decoder::{DecodeTimeImage, DecodeTimeOnly, PgsDecoder};
 pub use pgs_image::{RleEncodedImage, RleToImage};
 pub use sup::SupParser;
 
-use self::segment::SegmentTypeCode;
+pub use self::segment::SegmentTypeCode;
 use std::{
     io::{self, BufRead, Seek},
     num::TryFromIntError,

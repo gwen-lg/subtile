@@ -7,13 +7,30 @@ use std::{
 // Segment start Magic Number
 const MAGIC_NUMBER: [u8; 2] = [0x50, 0x47];
 
+/// The Segment Type TODO: improve doc
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum SegmentTypeCode {
+    /// Palette Definition Segment
+    ///
+    ///Used to define a palette for color conversion.
     Pds = 0x14,
+    ///Object Definition Segment
+    //
+    ///This segment defines the graphics object (image).
     Ods = 0x15,
+    /// Presentation Composition Segment
+    ///
+    /// Used for composing a sub picture.
+    /// TODO: be able to parse it
     Pcs = 0x16,
+    /// Window Definition Segment
+    ///
+    /// Used to define the rectangular area on the screen where the sub picture will be shown.
     Wds = 0x17,
+    /// End Segment
+    ///
+    /// The end segment always has a segment size of zero and indicates the end of a Display Set (DS) definition.
     End = 0x80,
 }
 
