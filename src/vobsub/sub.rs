@@ -4,19 +4,20 @@
 //!
 //! [subs]: http://sam.zoy.org/writings/dvd/subtitles/
 
-use super::{decoder::VobSubDecoder, img::VobSubIndexedImage, mpeg2::ps, VobSubError};
+use super::{VobSubError, decoder::VobSubDecoder, img::VobSubIndexedImage, mpeg2::ps};
 use crate::{
     content::{Area, AreaValues},
     time::TimeSpan,
     util::BytesFormatter,
     vobsub::{
-        img::{VobSubRleImage, VobSubRleImageData},
         IResultExt,
+        img::{VobSubRleImage, VobSubRleImageData},
     },
 };
 use iter_fixed::IntoIteratorFixed;
 use log::{trace, warn};
 use nom::{
+    IResult,
     bits::{bits, complete::take as take_bits},
     branch::alt,
     bytes,
@@ -24,8 +25,7 @@ use nom::{
     combinator::{map, value},
     multi::{count, many_till},
     number::complete::be_u16,
-    sequence::{preceded, Tuple},
-    IResult,
+    sequence::{Tuple, preceded},
 };
 use std::{
     cmp::Ordering, fmt::Debug, fs, io::Read, iter::FusedIterator, marker::PhantomData, path::Path,

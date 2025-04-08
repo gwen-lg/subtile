@@ -4,18 +4,18 @@
 
 use log::{debug, trace, warn};
 use nom::{
+    IResult,
     bits::{
         bits,
         complete::{tag as tag_bits, take as take_bits},
     },
     bytes::complete::tag as tag_bytes,
     sequence::Tuple,
-    IResult,
 };
 use std::fmt;
 
 use super::{
-    clock::{clock_and_ext, Clock},
+    clock::{Clock, clock_and_ext},
     pes,
 };
 use crate::vobsub::{NomError, VobSubError};

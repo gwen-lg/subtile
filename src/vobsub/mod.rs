@@ -76,9 +76,9 @@ mod probe;
 mod sub;
 
 pub use self::{
-    idx::Index,
-    img::{conv_to_rgba, VobSubIndexedImage, VobSubOcrImage, VobSubToImage},
-    palette::{palette, palette_rgb_to_luminance, Palette},
+    idx::{Index, TimePointIdx},
+    img::{VobSubIndexedImage, VobSubOcrImage, VobSubToImage, conv_to_rgba},
+    palette::{Palette, palette, palette_rgb_to_luminance},
     probe::{is_idx_file, is_sub_file},
     sub::{ErrorMissing, Sub},
 };

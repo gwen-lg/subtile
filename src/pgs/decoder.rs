@@ -2,11 +2,11 @@ use crate::time::{TimePoint, TimeSpan};
 use std::io::{BufRead, Seek};
 
 use super::{
+    PgsError,
     ods::{self, ObjectDefinitionSegment},
     pds,
     pgs_image::RleEncodedImage,
-    segment::{read_header, skip_segment, SegmentTypeCode},
-    PgsError,
+    segment::{SegmentTypeCode, read_header, skip_segment},
 };
 
 /// Trait of `Presentation Graphic Stream` decoding.

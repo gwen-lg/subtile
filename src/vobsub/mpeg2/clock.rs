@@ -1,7 +1,7 @@
 use nom::{
+    IResult,
     bits::complete::{tag, take},
     sequence::Tuple,
-    IResult,
 };
 use std::fmt;
 

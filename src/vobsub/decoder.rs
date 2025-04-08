@@ -1,4 +1,4 @@
-use super::{img::VobSubRleImage, VobSubIndexedImage};
+use super::{VobSubIndexedImage, img::VobSubRleImage};
 use crate::time::{TimePoint, TimeSpan};
 
 /// The default length of a subtitle if no end time is provided and no

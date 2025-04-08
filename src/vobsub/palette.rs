@@ -1,10 +1,10 @@
 use image::{Luma, Pixel, Rgb};
 use nom::{
+    IResult,
     bytes::complete::{tag, take_while_m_n},
     combinator::map_res,
     multi::separated_list0,
     sequence::tuple,
-    IResult,
 };
 
 use super::VobSubError;
