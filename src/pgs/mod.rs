@@ -13,9 +13,9 @@ mod u24;
 
 pub use decoder::{DecodeTimeImage, DecodeTimeOnly, PgsDecoder};
 pub use pgs_image::{RleEncodedImage, RleToImage};
+pub use segment::SegmentTypeCode;
 pub use sup::SupParser;
 
-use self::segment::SegmentTypeCode;
 use std::{
     io::{self, BufRead, Seek},
     num::TryFromIntError,
