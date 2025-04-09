@@ -12,12 +12,13 @@ mod sup;
 mod u24;
 
 pub use decoder::{DecodeTimeImage, DecodeTimeOnly, PgsDecoder};
+use ods::ObjectDefinitionSegment;
 pub use pgs_image::{RleEncodedImage, RleToImage};
 pub use sup::SupParser;
 
 pub use self::segment::SegmentTypeCode;
 use std::{
-    io::{self, BufRead, Seek},
+    io::{self, BufRead, Cursor, Seek},
     num::TryFromIntError,
     path::PathBuf,
 };
@@ -152,3 +153,55 @@ where
     }
 }
 impl<U> ReadExt for U where U: BufRead + Seek {}
+
+/// TODO
+#[derive(Debug, Default)]
+pub struct SegmentSplitter<'a> {
+    pds_data: Option<&'a [u8]>,
+    ods_data: Option<&'a [u8]>,
+    complete: bool,
+}
+
+impl<'a> SegmentSplitter<'a> {
+    /// TODO
+    ///
+    /// # Panics
+    ///
+    /// Panics if .
+    pub fn process_segment(&mut self, code: SegmentTypeCode, segment_data: &'a [u8]) {
+        match code {
+            SegmentTypeCode::Pds => {
+                assert!(self.pds_data.is_none());
+                self.pds_data = Some(segment_data);
+            }
+            SegmentTypeCode::Ods => {
+                assert!(self.ods_data.is_none());
+                self.ods_data = Some(segment_data);
+            }
+            SegmentTypeCode::Pcs => todo!(),
+            SegmentTypeCode::Wds => todo!(),
+            SegmentTypeCode::End => self.complete = true,
+        }
+    }
+
+    /// .
+    ///
+    /// # Panics
+    ///
+    /// TODO: replace panic with Error
+    #[must_use]
+    pub fn into_image(self) -> RleEncodedImage {
+        let pds_size = self.pds_data.unwrap().len();
+        let mut pds_data = Cursor::new(self.pds_data.unwrap());
+        let pds = pds::read(&mut pds_data, pds_size).unwrap();
+
+        let ods_data = self.ods_data.unwrap();
+        if let ObjectDefinitionSegment::Complete(ods) =
+            ods::read(&mut Cursor::new(ods_data), ods_data.len(), None).unwrap()
+        {
+            RleEncodedImage::new(ods.width, ods.height, pds.palette, ods.object_data)
+        } else {
+            panic!("the ObjectDefinitionSegment is attenden to be complete");
+        }
+    }
+}
