@@ -13,7 +13,7 @@ mod u24;
 
 pub use decoder::{DecodeTimeImage, DecodeTimeOnly, PgsDecoder};
 use ods::ObjectDefinitionSegment;
-pub use pgs_image::{RleEncodedImage, RleToImage};
+pub use pgs_image::{pixel_pass_through, RleEncodedImage, RleToImage};
 pub use sup::SupParser;
 
 pub use self::segment::SegmentTypeCode;
