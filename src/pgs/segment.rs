@@ -1,5 +1,8 @@
+use thiserror::Error;
+
 use super::{PgsError, ReadExt as _};
 use std::{
+    array::TryFromSliceError,
     fmt,
     io::{BufRead, ErrorKind, Seek},
 };
@@ -146,6 +149,69 @@ pub fn skip_segment<R: BufRead + Seek>(
             source,
             type_code: header.type_code(),
         })
+}
+
+/// Define the errors of Segment Buffer creation.
+#[derive(Debug, Error)]
+pub enum SegmentBufError {
+    #[error("Failed to read valid `SegmentCode` from buffer")]
+    SegmentCodeRead(#[from] PgsError),
+
+    #[error("Failed to read valid `segment size` from buffer")]
+    SegmentSizeRead(#[from] TryFromSliceError),
+
+    #[error("Buffer len ({buf_len}) and segment size({seg_size}) doesn't match")]
+    BufferLen { seg_size: u16, buf_len: usize },
+}
+
+/// Wrap Bytes of a segment buffer (as read from matroska by example).
+///
+/// It's used by [`SegmentSplitter`] to return data.
+pub struct SegmentBuf<'a> {
+    buffer: &'a [u8],
+}
+impl<'a> SegmentBuf<'a> {
+    /// Get code of the segment.
+    ///
+    /// # Panics
+    ///
+    /// Should never panic, as the `SegmentTypeCode` is checked at construction.
+    #[must_use]
+    pub fn code(&self) -> SegmentTypeCode {
+        SegmentTypeCode::try_from(self.buffer[0]).unwrap()
+    }
+    /// Get the buffer of the segment. This include segment code and size as header.
+    #[must_use]
+    pub const fn buffer(&self) -> &'a [u8] {
+        self.buffer
+    }
+    /// Get the data of the segment. Doesn't include segment code and size.
+    #[must_use]
+    pub fn data(&self) -> &'a [u8] {
+        &self.buffer[3..]
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for SegmentBuf<'a> {
+    type Error = SegmentBufError;
+
+    fn try_from(buffer: &'a [u8]) -> Result<Self, Self::Error> {
+        let _seg_code =
+            SegmentTypeCode::try_from(buffer[0]).map_err(SegmentBufError::SegmentCodeRead)?;
+        let seg_size = u16::from_be_bytes(
+            buffer[1..3]
+                .try_into()
+                .map_err(SegmentBufError::SegmentSizeRead)?,
+        );
+        if seg_size as usize + 3 < buffer.len() {
+            Err(SegmentBufError::BufferLen {
+                seg_size,
+                buf_len: buffer.len(),
+            })
+        } else {
+            Ok(Self { buffer })
+        }
+    }
 }
 
 #[cfg(test)]
