@@ -84,6 +84,12 @@ fn pe_to_luma_a<P: Primitive>(input: &PaletteEntry) -> LumaA<P> {
     LumaA([luminance, alpha])
 }
 
+/// Pass-through pixel to keep all information.
+#[must_use]
+pub const fn pixel_pass_through(pix: LumaA<u8>) -> LumaA<u8> {
+    pix
+}
+
 /// This struct implement [`ToImage`] to generate an `ImageBuffer` from
 /// a [`RleEncodedImage`] and a pixel conversion function.
 pub struct RleToImage<'a, P, C>
