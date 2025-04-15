@@ -13,10 +13,10 @@ mod u24;
 
 pub use decoder::{DecodeTimeImage, DecodeTimeOnly, PgsDecoder};
 use ods::ObjectDefinitionSegment;
-pub use pgs_image::{RleEncodedImage, RleToImage};
+pub use pgs_image::{RleEncodedImage, RleToImage, pixel_pass_through};
+pub use segment::{SegmentBuf, SegmentTypeCode};
 pub use sup::SupParser;
 
-pub use self::segment::SegmentTypeCode;
 use std::{
     io::{self, BufRead, Cursor, Seek},
     num::TryFromIntError,
@@ -156,13 +156,13 @@ impl<U> ReadExt for U where U: BufRead + Seek {}
 
 /// TODO
 #[derive(Debug, Default)]
-pub struct SegmentSplitter<'a> {
+pub struct SegmentProcessor<'a> {
     pds_data: Option<&'a [u8]>,
     ods_data: Option<&'a [u8]>,
     complete: bool,
 }
 
-impl<'a> SegmentSplitter<'a> {
+impl<'a> SegmentProcessor<'a> {
     /// TODO
     ///
     /// # Panics
@@ -178,8 +178,8 @@ impl<'a> SegmentSplitter<'a> {
                 assert!(self.ods_data.is_none());
                 self.ods_data = Some(segment_data);
             }
-            SegmentTypeCode::Pcs => todo!(),
-            SegmentTypeCode::Wds => todo!(),
+            SegmentTypeCode::Pcs => {} //TODO: ignore for now
+            SegmentTypeCode::Wds => {} //TODO: ignore for now
             SegmentTypeCode::End => self.complete = true,
         }
     }
