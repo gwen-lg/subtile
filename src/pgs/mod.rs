@@ -13,7 +13,7 @@ mod u24;
 
 pub use decoder::{DecodeTimeImage, DecodeTimeOnly, PgsDecoder};
 pub use pgs_image::{pixel_pass_through, RleEncodedImage, RleToImage};
-pub use segment::{SegmentBuf, SegmentTypeCode};
+pub use segment::{SegmentBuf, SegmentSplitter, SegmentTypeCode};
 pub use sup::SupParser;
 
 use std::{
