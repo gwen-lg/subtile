@@ -130,3 +130,65 @@ pub fn skip_segment<R: BufRead + Seek>(
             type_code: header.type_code(),
         })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn segment_type_code_valid() {
+        assert_eq!(
+            SegmentTypeCode::try_from(0x14).unwrap(),
+            SegmentTypeCode::Pds
+        );
+        assert_eq!(
+            SegmentTypeCode::try_from(0x15).unwrap(),
+            SegmentTypeCode::Ods
+        );
+        assert_eq!(
+            SegmentTypeCode::try_from(0x16).unwrap(),
+            SegmentTypeCode::Pcs
+        );
+        assert_eq!(
+            SegmentTypeCode::try_from(0x17).unwrap(),
+            SegmentTypeCode::Wds
+        );
+        assert_eq!(
+            SegmentTypeCode::try_from(0x80).unwrap(),
+            SegmentTypeCode::End
+        );
+    }
+
+    #[test]
+    fn segment_type_code_invalid() {
+        assert!(matches!(
+            SegmentTypeCode::try_from(0x00),
+            Err(PgsError::SegmentInvalidTypeCode { value } ) if value == 0x00));
+        assert!(matches!(
+            SegmentTypeCode::try_from(0x13),
+            Err(PgsError::SegmentInvalidTypeCode { value } ) if value == 0x13));
+        assert!(matches!(
+            SegmentTypeCode::try_from(0x18),
+            Err(PgsError::SegmentInvalidTypeCode { value } ) if value == 0x18));
+        assert!(matches!(
+            SegmentTypeCode::try_from(0x79),
+            Err(PgsError::SegmentInvalidTypeCode { value } ) if value == 0x79));
+        assert!(matches!(
+            SegmentTypeCode::try_from(0x81),
+            Err(PgsError::SegmentInvalidTypeCode { value } ) if value == 0x81));
+    }
+
+    #[test]
+    fn segment_type_code_str() {
+        let pds_str: &'static str = SegmentTypeCode::Pds.into();
+        assert_eq!(pds_str, "PDS");
+        let ods_str: &'static str = SegmentTypeCode::Ods.into();
+        assert_eq!(ods_str, "ODS");
+        let pcs_str: &'static str = SegmentTypeCode::Pcs.into();
+        assert_eq!(pcs_str, "PCS");
+        let wds_str: &'static str = SegmentTypeCode::Wds.into();
+        assert_eq!(wds_str, "WDS");
+        let end_str: &'static str = SegmentTypeCode::End.into();
+        assert_eq!(end_str, "END");
+    }
+}
