@@ -1,5 +1,5 @@
 use crate::time::{TimePoint, TimeSpan};
-use std::io::{BufRead, Seek};
+use std::io::{BufRead, Cursor, Seek};
 
 use super::{
     ods::{self, ObjectDefinitionSegment},
@@ -132,5 +132,56 @@ impl PgsDecoder for DecodeTimeImage {
         assert!(palette.is_none()); // palette should be transferred into image before get out of the function.
         assert!(prev_ods.is_none()); // Ods data should be converted into image before get out of the function.
         Ok(subtitle)
+    }
+}
+
+/// TODO: common with decoder ?
+#[derive(Debug, Default)]
+pub struct SegmentProcessor<'a> {
+    pds_data: Option<&'a [u8]>,
+    ods_data: Option<&'a [u8]>,
+    complete: bool,
+}
+
+impl<'a> SegmentProcessor<'a> {
+    /// TODO
+    ///
+    /// # Panics
+    ///
+    /// Panics if .
+    pub fn process_segment(&mut self, code: SegmentTypeCode, segment_data: &'a [u8]) {
+        match code {
+            SegmentTypeCode::Pds => {
+                assert!(self.pds_data.is_none());
+                self.pds_data = Some(segment_data);
+            }
+            SegmentTypeCode::Ods => {
+                assert!(self.ods_data.is_none());
+                self.ods_data = Some(segment_data);
+            }
+            SegmentTypeCode::Pcs | SegmentTypeCode::Wds => {} //TODO: ignore for now
+            SegmentTypeCode::End => self.complete = true,
+        }
+    }
+
+    /// .
+    ///
+    /// # Panics
+    ///
+    /// TODO: replace panic with Error
+    #[must_use]
+    pub fn into_image(self) -> RleEncodedImage {
+        let pds_size = self.pds_data.unwrap().len();
+        let mut pds_data = Cursor::new(self.pds_data.unwrap());
+        let pds = pds::read(&mut pds_data, pds_size).unwrap();
+
+        let ods_data = self.ods_data.unwrap();
+        if let ObjectDefinitionSegment::Complete(ods) =
+            ods::read(&mut Cursor::new(ods_data), ods_data.len(), None).unwrap()
+        {
+            RleEncodedImage::new(ods.width, ods.height, pds.palette, ods.object_data)
+        } else {
+            panic!("the ObjectDefinitionSegment is attenden to be complete");
+        }
     }
 }
