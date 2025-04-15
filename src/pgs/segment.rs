@@ -214,6 +214,63 @@ impl<'a> TryFrom<&'a [u8]> for SegmentBuf<'a> {
     }
 }
 
+/// Define the errors of Segment Buffer creation.
+#[derive(Debug, Error)]
+pub enum SegmentSplitterError {
+    #[error(transparent)]
+    TypeCode(#[from] PgsError),
+
+    #[error("Invalid segment size found")]
+    Size(#[source] TryFromSliceError),
+
+    #[error("Segment Buffer creation Failed")]
+    BufCreation(#[source] SegmentBufError),
+}
+
+/// This split a buffer of segment into [`SegmentBuf`].
+///
+/// It implement [`Iterator`] of Segment on a buffer.
+/// This can be used with data `PGS` in matroska files.
+#[derive(Debug, Clone, Copy)]
+pub struct SegmentSplitter<'a> {
+    content: &'a [u8],
+}
+
+impl<'a> SegmentSplitter<'a> {
+    fn split_next(&mut self) -> Result<SegmentBuf<'a>, SegmentSplitterError> {
+        let _seg_code =
+            SegmentTypeCode::try_from(self.content[0]).map_err(SegmentSplitterError::TypeCode)?;
+        let buf = self.content[1..3]
+            .try_into()
+            .map_err(SegmentSplitterError::Size)?;
+        let seg_size = u16::from_be_bytes(buf);
+
+        // + 3 to take the header size into account
+        let (seg_data, remain) = self.content.split_at(seg_size as usize + 3);
+        self.content = remain;
+
+        SegmentBuf::try_from(seg_data).map_err(SegmentSplitterError::BufCreation)
+    }
+}
+
+impl<'a> From<&'a [u8]> for SegmentSplitter<'a> {
+    fn from(content: &'a [u8]) -> Self {
+        Self { content }
+    }
+}
+
+impl<'a> Iterator for SegmentSplitter<'a> {
+    type Item = Result<SegmentBuf<'a>, SegmentSplitterError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.content.is_empty() {
+            None
+        } else {
+            Some(self.split_next())
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
