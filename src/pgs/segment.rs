@@ -274,6 +274,10 @@ impl<'a> Iterator for SegmentSplitter<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{
+        fs::{self},
+        path::Path,
+    };
 
     #[test]
     fn segment_type_code_valid() {
@@ -348,5 +352,43 @@ mod tests {
 
         assert_eq!(seg.code(), SegmentTypeCode::End);
         assert!(seg.data().is_empty());
+    }
+
+    fn segment_splitter_test_sub_start(path: impl AsRef<Path>) {
+        let buf = fs::read(path).unwrap();
+
+        let seg_splitter = SegmentSplitter::from(buf.as_slice());
+        seg_splitter.for_each(|seg_buf| {
+            assert!(seg_buf.is_ok());
+        });
+        assert_eq!(seg_splitter.count(), 5);
+    }
+    fn segment_splitter_test_sub_end(path: impl AsRef<Path>) {
+        let buf = fs::read(path).unwrap();
+
+        let seg_splitter = SegmentSplitter::from(buf.as_slice());
+        seg_splitter.for_each(|seg_buf| {
+            assert!(seg_buf.is_ok());
+        });
+        assert_eq!(seg_splitter.count(), 3);
+    }
+
+    #[test]
+    fn segment_splitter_580() {
+        segment_splitter_test_sub_start("fixtures/pgs/segments_580.raw");
+    }
+
+    #[test]
+    fn segment_splitter_2400() {
+        segment_splitter_test_sub_end("fixtures/pgs/segments_2400.raw");
+    }
+
+    #[test]
+    fn segment_splitter_2540() {
+        segment_splitter_test_sub_start("fixtures/pgs/segments_2540.raw");
+    }
+    #[test]
+    fn segment_splitter_4760() {
+        segment_splitter_test_sub_end("fixtures/pgs/segments_4760.raw");
     }
 }
