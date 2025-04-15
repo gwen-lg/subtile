@@ -186,6 +186,10 @@ impl<'a> SegmentBuf<'a> {
         self.buffer
     }
     /// Get the data of the segment. Doesn't include segment code and size.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if there is no data (should only arrive for `End` segment)
     #[must_use]
     pub fn data(&self) -> &'a [u8] {
         &self.buffer[3..]
