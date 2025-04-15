@@ -11,7 +11,7 @@ mod segment;
 mod sup;
 mod u24;
 
-pub use decoder::{DecodeTimeImage, DecodeTimeOnly, PgsDecoder};
+pub use decoder::{DecodeTimeImage, DecodeTimeOnly, PgsDecoder, SegmentProcessor};
 pub use pgs_image::{pixel_pass_through, RleEncodedImage, RleToImage};
 pub use segment::{SegmentBuf, SegmentSplitter, SegmentTypeCode};
 pub use sup::SupParser;
