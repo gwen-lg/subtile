@@ -274,4 +274,22 @@ mod tests {
         let end_str: &'static str = SegmentTypeCode::End.into();
         assert_eq!(end_str, "END");
     }
+
+    #[test]
+    fn segment_buf_pds() {
+        let buf: [u8; 7] = [0x14, 0x00, 0x04, 0x10, 0x25, 0x06, 0x00];
+        let seg = SegmentBuf::try_from(buf.as_slice()).unwrap();
+        assert_eq!(seg.code(), SegmentTypeCode::Pds);
+        assert_eq!(seg.data().len(), 4);
+        assert_eq!(seg.data(), buf[3..].iter().as_slice());
+    }
+
+    #[test]
+    fn segment_buf_end() {
+        let buf: [u8; 3] = [0x80, 0x00, 0x00];
+        let seg = SegmentBuf::try_from(buf.as_slice()).unwrap();
+
+        assert_eq!(seg.code(), SegmentTypeCode::End);
+        assert!(seg.data().is_empty());
+    }
 }
