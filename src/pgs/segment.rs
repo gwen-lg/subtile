@@ -300,6 +300,7 @@ pub enum FrameConvertError {
     #[error("There is no palette for image data")]
     MissingPalette,
 }
+
 impl TryFrom<SegmentSplitter<'_>> for RleEncodedImage {
     type Error = FrameConvertError;
 
@@ -348,6 +349,10 @@ impl TryFrom<SegmentSplitter<'_>> for RleEncodedImage {
 
 #[cfg(test)]
 mod tests {
+    use image::{DynamicImage, ImageReader};
+
+    use crate::{image::ToImage as _, pgs::RleToImage};
+
     use super::*;
     use std::{
         fs::{self},
@@ -465,5 +470,36 @@ mod tests {
     #[test]
     fn segment_splitter_4760() {
         segment_splitter_test_sub_end("fixtures/pgs/segments_4760.raw");
+    }
+
+    fn frame_image(frame: impl AsRef<Path>, img: impl AsRef<Path>) {
+        let frame_buf = fs::read(frame).unwrap();
+
+        let seg_splitter = SegmentSplitter::from(frame_buf.as_slice());
+        let rle_img: RleEncodedImage = seg_splitter.try_into().unwrap();
+        let img_frame = RleToImage::new(&rle_img, |pix| pix).to_image();
+
+        let img_file = ImageReader::open(img).unwrap().decode().unwrap();
+        let DynamicImage::ImageLumaA8(img_file) = img_file else {
+            panic!("file is expected to be a LumaA8 image.")
+        };
+
+        assert_eq!(img_frame, img_file);
+    }
+
+    #[test]
+    fn frame_image_580() {
+        frame_image(
+            "fixtures/pgs/segments_580.raw",
+            "fixtures/pgs/image_580.png",
+        );
+    }
+
+    #[test]
+    fn frame_image_2540() {
+        frame_image(
+            "fixtures/pgs/segments_2540.raw",
+            "fixtures/pgs/image_2540.png",
+        );
     }
 }
