@@ -1,11 +1,13 @@
-use thiserror::Error;
-
-use super::{PgsError, ReadExt as _};
+use super::{
+    ods::{self, ObjectDefinitionSegment},
+    pds, PgsError, ReadExt as _, RleEncodedImage,
+};
 use std::{
     array::TryFromSliceError,
     fmt,
-    io::{BufRead, ErrorKind, Seek},
+    io::{BufRead, Cursor, ErrorKind, Seek},
 };
+use thiserror::Error;
 
 // Segment start Magic Number
 const MAGIC_NUMBER: [u8; 2] = [0x50, 0x47];
@@ -271,6 +273,75 @@ impl<'a> Iterator for SegmentSplitter<'a> {
             None
         } else {
             Some(self.split_next())
+        }
+    }
+}
+
+/// Errors for frame segments conversion
+#[derive(Debug, Error)]
+pub enum FrameConvertError {
+    /// Forward errors from `SegmentSplitter`
+    #[error(transparent)]
+    Splitter(#[from] SegmentSplitterError),
+
+    /// Indicate than this is not an image frame. (use for end of subtitle)
+    #[error("This doesn't contain an image")]
+    NotAnImage,
+
+    /// No `End` found in segments, possible incomplete frame.
+    #[error("Not finished")]
+    NoEndFound,
+
+    /// The data for image are incomplete.
+    #[error("Incomplete image data (ObjectDefinitionSegment is not complete)")]
+    ImageDataNotComplete,
+
+    /// The palette corresponding to image data is missing.
+    #[error("There is no palette for image data")]
+    MissingPalette,
+}
+impl TryFrom<SegmentSplitter<'_>> for RleEncodedImage {
+    type Error = FrameConvertError;
+
+    fn try_from(mut value: SegmentSplitter<'_>) -> Result<Self, Self::Error> {
+        #[derive(Debug, Default)]
+        struct Data<'a> {
+            ods_data: Option<&'a [u8]>,
+            pds_data: Option<&'a [u8]>,
+            complete: bool,
+        }
+
+        let data = value.try_fold(Data::default(), |mut data, seg_buf| {
+            let seg_buf = seg_buf?;
+            match seg_buf.code() {
+                SegmentTypeCode::Pds => {
+                    assert!(data.pds_data.is_none());
+                    data.pds_data = Some(seg_buf.data());
+                }
+                SegmentTypeCode::Ods => {
+                    assert!(data.ods_data.is_none());
+                    data.ods_data = Some(seg_buf.data());
+                }
+                SegmentTypeCode::Pcs | SegmentTypeCode::Wds => {} //TODO: ignore for now
+                SegmentTypeCode::End => data.complete = true,
+            }
+            Ok::<_, SegmentSplitterError>(data)
+        })?;
+
+        if !data.complete {
+            return Err(FrameConvertError::NoEndFound);
+        }
+
+        let ods_data = data.ods_data.ok_or(FrameConvertError::NotAnImage)?;
+        let pds_data = data.pds_data.ok_or(FrameConvertError::MissingPalette)?;
+        let pds = pds::read(&mut Cursor::new(pds_data), pds_data.len()).unwrap();
+        if let ObjectDefinitionSegment::Complete(ods) =
+            ods::read(&mut Cursor::new(ods_data), ods_data.len(), None).unwrap()
+        {
+            let image = Self::new(ods.width, ods.height, pds.palette, ods.object_data);
+            Ok(image)
+        } else {
+            Err(FrameConvertError::ImageDataNotComplete)
         }
     }
 }
