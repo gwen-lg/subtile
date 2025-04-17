@@ -75,7 +75,7 @@ where
 
 /// Dump one image
 #[profiling::function]
-fn dump_image<P, Pix, Container>(
+pub fn dump_image<P, Pix, Container>(
     filename: P,
     image: &image::ImageBuffer<Pix, Container>, // image::Luma<u8>, Vec<u8>
 ) -> Result<(), image::ImageError>
