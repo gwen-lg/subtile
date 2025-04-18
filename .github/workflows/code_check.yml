@@ -1,5 +1,7 @@
 name: CI - Code Checks & Tests
-run-name: Checks Rust code on ${{ github.event_name }}
+run-name: ${{ github.event_name }} ${{ github.event.head_commit.message }}
+
+#  github.event_name == 'push' && github.event.head_commit.message || github.event_name == 'pull_request' && github.event.head_commit
 
 on:
   push:
