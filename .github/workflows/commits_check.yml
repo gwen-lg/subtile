@@ -20,6 +20,12 @@ jobs:
   check-conventional-commits:
     name: Check Conventional Commits
     runs-on: ubuntu-latest
+    concurrency:
+      # For a given workflow, if we push to the same branch, cancel all previous builds on that branch.
+      # Particularly useful for workflow triggered on release-plz sync.
+      # release-plz workflow update de pending pr twice (with cargo readme update)
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     steps:
     - uses: actions/checkout@v4
 
@@ -35,6 +41,13 @@ jobs:
 
     name: "Check: ${{ matrix.commit.message }}"
     runs-on: ubuntu-latest
+    concurrency:
+      # For a given workflow, if we push to the same branch, cancel all previous builds on that branch.
+      # Particularly useful for workflow triggered on release-plz sync.
+      # release-plz workflow update de pending pr twice (with cargo readme update)
+      # Note: Include commit message to not cancel job of commit not updated in push
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.commit.message }}
+      cancel-in-progress: true
     steps:
       - name: "Install rust-toolchain stable"
         uses: actions-rust-lang/setup-rust-toolchain@v1
