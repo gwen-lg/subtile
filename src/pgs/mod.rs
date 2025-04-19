@@ -128,7 +128,7 @@ where
         if buff.len() >= to_skip {
             self.consume(to_skip);
         } else {
-            self.seek_relative(to_skip as i64)
+            self.seek_relative(i64::try_from(to_skip).unwrap())
                 .map_err(ReadError::FailedSeek)?;
         }
         Ok(())
