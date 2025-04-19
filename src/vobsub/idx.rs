@@ -33,12 +33,14 @@ impl TryFrom<&str> for Lang {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         static KEY_VALUE: LazyLock<Regex> =
             LazyLock::new(|| Regex::new("^([a-z]+), index: (.*)").unwrap());
-        KEY_VALUE
+        let x = KEY_VALUE
             .captures(value)
-            .map_or(Err(VobSubError::LangParsing), |cap| {
+            .ok_or(VobSubError::LangParsing)
+            .map(|cap| {
                 let lang = cap.get(1).unwrap().as_str();
-                Ok(Self(lang.into()))
-            })
+                Self(lang.into())
+            });
+        x
     }
 }
 
