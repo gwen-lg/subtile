@@ -33,12 +33,14 @@ impl TryFrom<&str> for Lang {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         static KEY_VALUE: LazyLock<Regex> =
             LazyLock::new(|| Regex::new("^([a-z]+), index: (.*)").unwrap());
-        if let Some(cap) = KEY_VALUE.captures(value) {
-            let lang = cap.get(1).unwrap().as_str();
-            Ok(Self(lang.into()))
-        } else {
-            Err(VobSubError::LangParsing)
-        }
+        let x = KEY_VALUE
+            .captures(value)
+            .ok_or(VobSubError::LangParsing)
+            .map(|cap| {
+                let lang = cap.get(1).unwrap().as_str();
+                Self(lang.into())
+            });
+        x
     }
 }
 
@@ -134,10 +136,7 @@ impl Index {
         }
 
         //TODO: report missing palette ?
-        let palette = match palette_val {
-            Some(palette) => palette,
-            None => DEFAULT_PALETTE,
-        };
+        let palette = palette_val.unwrap_or(DEFAULT_PALETTE);
 
         Ok(Self { palette, lang })
     }
