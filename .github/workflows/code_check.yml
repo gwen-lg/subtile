@@ -3,7 +3,7 @@ name: CI - Code Checks & Tests
 on:
   push:
     branches-ignore:
-      - 'wip*'
+      - "wip*"
     paths:
       - ".github/workflows/code_check.yml"
       - "Cargo.*"
@@ -63,6 +63,11 @@ jobs:
         if: $${{ always() }}
         run: |
           cargo fmt --all -- --check
+
+      - name: "Cargo.toml format"
+        id: cargo_toml_fmt
+        if: $${{ always() }}
+        uses: gwen-lg/taplo-action@344dea150982210112e783e9876ab2030c8761c3
 
       - name: Check if readme is up to date
         id: cargo_readme
