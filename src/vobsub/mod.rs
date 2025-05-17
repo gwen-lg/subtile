@@ -172,8 +172,12 @@ pub enum VobSubError {
     MissingSubtitleParsing(#[from] ErrorMissing),
 
     /// We could not process a subtitle image.
-    #[error("Could not process subtitle image: {0}")]
+    #[error("Could not process subtitle image")]
     Image(#[from] img::Error),
+
+    /// Could not convert image from vobsub data.
+    #[error("Could not convert image from vobsub data")]
+    ImageConvert(#[source] img::Error),
 
     /// Io error on a path.
     #[error("Io error on '{path}'")]

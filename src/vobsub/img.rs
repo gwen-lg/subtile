@@ -270,15 +270,17 @@ impl ImageArea for VobSubIndexedImage {
     }
 }
 
-impl From<VobSubRleImage<'_>> for VobSubIndexedImage {
-    fn from(rle_image: VobSubRleImage) -> Self {
-        let decompressed_image = decompress(rle_image.size(), rle_image.raw_data()).unwrap();
-        Self::new(
+impl TryFrom<VobSubRleImage<'_>> for VobSubIndexedImage {
+    type Error = Error;
+
+    fn try_from(rle_image: VobSubRleImage) -> Result<Self, Self::Error> {
+        let decompressed_image = decompress(rle_image.size(), rle_image.raw_data())?;
+        Ok(Self::new(
             rle_image.area(),
             *rle_image.palette(),
             *rle_image.alpha(),
             decompressed_image,
-        )
+        ))
     }
 }
 

@@ -532,7 +532,17 @@ impl<D> Iterator for VobsubParser<'_, D> {
         profiling::scope!("VobsubParser next");
 
         let (base_time, sub_packet) = try_iter!(self.next_sub_packet());
-        let subtitle = subtitle::<(TimeSpan, VobSubIndexedImage), _>(&sub_packet, base_time);
+        let subtitle =
+            subtitle::<(TimeSpan, Result<VobSubIndexedImage, _>), _>(&sub_packet, base_time);
+
+        //HACK: manual implementation of flatten
+        let subtitle = match subtitle {
+            Ok((time, res)) => match res {
+                Ok(img) => Ok((time, img)),
+                Err(err) => Err(VobSubError::ImageConvert(err)),
+            },
+            Err(err) => Err(err),
+        };
 
         // Parse our subtitle buffer.
         Some(subtitle)
