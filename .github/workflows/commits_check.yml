@@ -28,10 +28,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
-
       - uses: webiny/action-conventional-commits@v1.3.0
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   check-push-commits:
     if: ${{ github.event_name == 'push' }}
@@ -65,7 +62,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          cache-on-failure: "true" # useful for don't rebuild cargo-readme and dependencies on fix after failure
+          cache-on-failure: true # useful for don't rebuild cargo-readme and dependencies on fix after failure
 
       - name: Install cargo-readme
         run: cargo install cargo-readme
