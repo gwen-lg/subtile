@@ -64,7 +64,7 @@ jobs:
       - name: "Cargo.toml format"
         id: cargo_toml_fmt
         if: $${{ always() }}
-        uses: gwen-lg/taplo@7e998464a4978c87d29df9104304e77ce8a4db44
+        uses: gwen-lg/taplo@aa9565f6abd8e986a666254d556f38ae681aacc5
 
       - name: Check if readme is up to date
         id: cargo_readme
