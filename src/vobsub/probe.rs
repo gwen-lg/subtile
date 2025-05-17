@@ -17,7 +17,7 @@ fn has_magic(path: &Path, magic: &[u8]) -> Result<bool, VobSubError> {
     Ok(magic == &bytes[..])
 }
 
-/// Does the specified path appear to point to an `*.idx` file?
+/// Does the specifeid path appear to point to an `*.idx` file?
 /// # Errors
 ///
 /// Will return `Err` if the file can't be read.
