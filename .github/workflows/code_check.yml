@@ -3,7 +3,7 @@ name: CI - Code Checks & Tests
 on:
   push:
     branches-ignore:
-      - 'wip*'
+      - "wip*"
     paths:
       - ".github/workflows/code_check.yml"
       - "Cargo.*"

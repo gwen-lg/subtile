@@ -1,4 +1,4 @@
-name: 'Individual Commits Check'
+name: "Individual Commits Check"
 on:
   pull_request:
     types:
@@ -14,7 +14,7 @@ on:
       - synchronize
   push:
     branches:
-      - '*'
+      - "*"
 
 jobs:
   check-conventional-commits:
@@ -27,11 +27,11 @@ jobs:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: webiny/action-conventional-commits@v1.3.0
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: webiny/action-conventional-commits@v1.3.0
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   check-push-commits:
     if: ${{ github.event_name == 'push' }}
@@ -52,7 +52,7 @@ jobs:
       - name: "Install rust-toolchain stable"
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain : stable
+          toolchain: stable
           components: clippy, rustfmt
 
       - name: "Show environment"
