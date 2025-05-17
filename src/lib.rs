@@ -16,6 +16,8 @@
 //!
 //! Your feedback and contributions are welcome!  Please see
 //! [Subtile](https://github.com/gwen-lg/subtile) on GitHub for details.
+//!
+//! test for error check
 
 // For error-chain.
 #![recursion_limit = "1024"]
