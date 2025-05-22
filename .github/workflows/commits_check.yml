@@ -27,7 +27,6 @@ jobs:
         with:
           ref: ${{ github.ref }}
           check-name: "Release-plz PR"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
   check-conventional-commits:
     name: Check Conventional Commits
