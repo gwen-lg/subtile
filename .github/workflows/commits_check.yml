@@ -83,6 +83,14 @@ jobs:
           format: true
           lint: false
 
+      - name: "Cargo.toml lint"
+        id: cargo_toml_lint
+        if: $${{ always() }}
+        uses: gwen-lg/taplo-action@v1
+        with:
+          format: false
+          lint: true
+
       - name: Check if readme is up to date
         id: cargo_readme
         if: $${{ always() }}
