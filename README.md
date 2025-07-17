@@ -25,4 +25,6 @@ and extend the provided features.
 Your feedback and contributions are welcome!  Please see
 [Subtile](https://github.com/gwen-lg/subtile) on GitHub for details.
 
+test for error check
+
 ## License : LGPL-3.0-or-later
