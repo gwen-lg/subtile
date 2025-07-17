@@ -50,6 +50,9 @@ jobs:
           token: ${{ secrets.RELEASE_PLZ_TOKEN }}
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true # useful for don't rebuild cargo-readme and dependencies on fix after failure
       - name: Install cargo-readme
         run: cargo install cargo-readme
       - name: Run release-plz
