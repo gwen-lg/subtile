@@ -6,6 +6,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0](https://github.com/gwen-lg/subtile/compare/v0.3.2...v0.4.0) - 2025-07-17
+
+### Added
+
+- *(vobsub)* add lang parsing in Index file
+- *(vobsub)* [**breaking**] make Index optional.
+- *(vobsub)* add TimePointIdx to implement Display
+- *(time)* set msecs public
+- *(webvtt)* add write_line public function
+- *(time)* add TimePointVtt to handle display of time for WebVTT
+- *(time)* add TimePointSrt to implement display on TimePoint
+- implement FusedIterator for SubParser & VobsubParser
+
+### Fixed
+
+- *(workflow)* remove invalid strategy in code_check
+- *(workflow)* add missing commit ref for checkout step
+- *(image)* re-export GrayImage & Luma from image crate
+
+### Other
+
+- *(commits)* verify if event have commits
+- *(release)* use publishing environment in release workflow
+- *(release)* add rust-cache on release-plz PR update
+- *(release)* move install of cargo-readme before release-plz action
+- *(release)* update release-plz workflow
+- *(workflow)* correct yaml style
+- *(check)* don't run workflow on 'wip' branches
+- *(checks)* remove custom run-name
+- move rust-cache before install cargo-readme
+- cancel running workflow on branch update
+- migrate `vobsub` parsing to nom 8.0
+- *(vobsub)* tag_bytes alias instead of full path
+- use enum ControlCommandTag for named control command tag
+- *(srt)* add write_line in srt module
+- *(release-plz)* update release-plz action
+- *(release-plz)* disable `release-plz` workflow for fork
+- add dependabot.yml for github
+- use LazyLock from std instead of OnceCell
+- *(clippy)* enable additional lints
+- *(clippy)* add missing semicolon to the last statement
+- *(vobsub)* Use Luma<u8> from image for palette.
+- *(decoder)* rework decoder loop to handle parsing errors cleaner
+- *(pgs)* rename `seg_header` var in `DecodeTimeImage`
+- *(clippy)* directly use variables in the `format!` string
+- *(cargo)* run cargo update
+- *(clippy)* add parenthesis on mixed usage of arithmetic and bit shifting/combining operators
+- *(lint)* allow for clippy lint `missing_const_for_fn` invalide report
+- *(github)* add FUNDING.yml file with liberapay account
+- *(commits)* add check-commits on push
+- *(commits)* add workflow to check individual commits
+- *(code_check)* use locked flag for reduce time
+- *(code_check)* add rust-cache action
+- *(code_check)* reorder steps with typos/fmt at first.
+
 ## [0.3.2](https://github.com/gwen-lg/subtile/compare/v0.3.1...v0.3.2) - 2025-01-12
 
 ### Added

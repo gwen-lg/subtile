@@ -1,6 +1,6 @@
 [package]
 name = "subtile"
-version = "0.3.2"
+version = "0.4.0"
 edition = "2021"
 description = "A crate of utils to operate traitements on subtitles"
 repository = "https://github.com/gwen-lg/subtile"
