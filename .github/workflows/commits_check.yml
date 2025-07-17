@@ -31,7 +31,7 @@ jobs:
       - uses: webiny/action-conventional-commits@v1.3.0
 
   check-push-commits:
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' && github.event.commits }}
     strategy:
       fail-fast: false
       matrix:
