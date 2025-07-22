@@ -172,7 +172,7 @@ pub enum VobSubError {
     MissingSubtitleParsing(#[from] ErrorMissing),
 
     /// We could not process a subtitle image.
-    #[error("Could not process subtitle image: {0}")]
+    #[error("Could not process subtitle image")]
     Image(#[from] img::Error),
 
     /// Io error on a path.
