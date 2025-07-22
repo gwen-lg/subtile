@@ -49,6 +49,7 @@ style = { priority = -1, level = "deny" }
 bind_instead_of_map = "deny"
 borrowed_box = "deny"
 cast_lossless = "deny"
+cast_possible_wrap = "deny"
 checked_conversions = "deny"
 clone_on_copy = "deny"
 derive_partial_eq_without_eq = "deny"

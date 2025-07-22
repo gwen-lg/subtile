@@ -18,6 +18,7 @@ pub use sup::SupParser;
 use self::segment::SegmentTypeCode;
 use std::{
     io::{self, BufRead, Seek},
+    num::TryFromIntError,
     path::PathBuf,
 };
 use thiserror::Error;
@@ -96,6 +97,16 @@ pub enum ReadError {
     /// An error has occurred during seek in reader.
     #[error("Seek failed")]
     FailedSeek(#[source] io::Error),
+
+    /// An invalid seek value was provided.
+    #[error("invalid skip value: `{value}` can't be converted in valid seek offset (i64 number)")]
+    InvalidSeekValue {
+        /// value conversion error
+        #[source]
+        source: TryFromIntError,
+        /// the value that could not be converted
+        value: usize,
+    },
 }
 
 /// Super-trait of `BufRead` + `Seek` to extend reading functionalities useful for parsing.
@@ -121,15 +132,19 @@ where
     /// # Errors
     ///
     /// Will return `FailedFillBuf` if `fill_buf` failed.
-    /// `FailedSeek` if `seek` failed.
+    /// Will return `FailedSeek` if `seek` failed.
+    /// Will return `InvalidSeekValue` if `to_skip` value can't be converted in i64.
     fn skip_data(&mut self, to_skip: usize) -> Result<(), ReadError> {
         let buff = self.fill_buf().map_err(ReadError::FailedFillBuf)?;
 
         if buff.len() >= to_skip {
             self.consume(to_skip);
         } else {
-            self.seek_relative(to_skip as i64)
-                .map_err(ReadError::FailedSeek)?;
+            let to_skip = i64::try_from(to_skip).map_err(|source| ReadError::InvalidSeekValue {
+                source,
+                value: to_skip,
+            })?;
+            self.seek_relative(to_skip).map_err(ReadError::FailedSeek)?;
         }
         Ok(())
     }
