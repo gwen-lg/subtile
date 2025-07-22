@@ -126,7 +126,7 @@ impl PgsDecoder for DecodeTimeImage {
                     // Segment not taken into account are skipped
                     skip_segment(reader, &seg_header)?;
                 }
-            };
+            }
         }
 
         assert!(palette.is_none()); // palette should be transferred into image before get out of the function.
