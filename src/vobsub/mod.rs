@@ -178,6 +178,10 @@ pub enum VobSubError {
     #[error("could not process subtitle image")]
     Image(#[from] img::Error),
 
+    /// Could not convert image from vobsub data.
+    #[error("Could not convert image from vobsub data")]
+    ImageConvert(#[source] img::Error),
+
     /// Io error on a path.
     #[error("Io error on '{path}'")]
     Io {

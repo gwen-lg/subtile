@@ -21,7 +21,7 @@ pub trait VobSubDecoder<'a> {
 }
 
 /// Implement creation of a tuple of [`TimeSpan`] and [`VobSubIndexedImage`] from parsing.
-impl<'a> VobSubDecoder<'a> for (TimeSpan, VobSubIndexedImage) {
+impl<'a> VobSubDecoder<'a> for (TimeSpan, Result<VobSubIndexedImage, super::img::Error>) {
     type Output = Self;
 
     fn from_data(
@@ -35,7 +35,7 @@ impl<'a> VobSubDecoder<'a> for (TimeSpan, VobSubIndexedImage) {
                 TimePoint::from_secs(start_time),
                 TimePoint::from_secs(end_time.unwrap_or(DEFAULT_SUBTITLE_LENGTH)),
             ),
-            VobSubIndexedImage::from(rle_image),
+            VobSubIndexedImage::try_from(rle_image),
         )
     }
 }
