@@ -13,8 +13,8 @@ on:
       - reopened
       - synchronize
   push:
-    branches:
-      - "*"
+    branches-ignore:
+      - "wip*"
 
 jobs:
   wait_release_plz_pr:
