@@ -31,13 +31,13 @@ fn compute_offset(palette: &[PaletteEntry]) -> i16 {
     if palette.is_empty() {
         0
     } else {
-        0 - i16::from(palette[0]._palette_entry_id)
+        0 - i16::from(palette[0].palette_entry_id)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PaletteEntry {
-    _palette_entry_id: u8,      // Entry number of the palette
+    palette_entry_id: u8,       // Entry number of the palette
     pub luminance: u8,          // Luminance (Y value)
     _color_difference_red: u8,  // Color Difference Red (Cr value)
     _color_difference_blue: u8, // Color Difference Blue (Cb value)
@@ -69,7 +69,7 @@ pub(crate) fn read<R: Read>(
         .map(|idx| {
             let offset = 2 + (idx * 5);
             PaletteEntry {
-                _palette_entry_id: pds_buf[offset],
+                palette_entry_id: pds_buf[offset],
                 luminance: pds_buf[offset + 1],
                 _color_difference_red: pds_buf[offset + 2],
                 _color_difference_blue: pds_buf[offset + 3],
