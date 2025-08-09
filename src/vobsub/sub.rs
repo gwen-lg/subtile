@@ -27,7 +27,7 @@ use nom::{
     IResult, Parser,
 };
 use std::{
-    cmp::Ordering, fmt::Debug, fs, io::Read, iter::FusedIterator, marker::PhantomData, path::Path,
+    cmp::Ordering, fmt::Debug, fs, iter::FusedIterator, marker::PhantomData, path::Path,
     slice::from_ref,
 };
 use thiserror::Error;
@@ -428,16 +428,10 @@ impl Sub {
     where
         P: AsRef<Path> + Clone,
     {
-        let mut sub = fs::File::open(path.as_ref()).map_err(|source| VobSubError::Io {
+        let data = fs::read(path.as_ref()).map_err(|source| VobSubError::Io {
             source,
             path: path.as_ref().to_path_buf(),
         })?;
-        let mut data = vec![];
-        sub.read_to_end(&mut data)
-            .map_err(|source| VobSubError::Io {
-                source,
-                path: path.as_ref().to_path_buf(),
-            })?;
         Ok(Self { data })
     }
 
@@ -610,15 +604,12 @@ mod tests {
     fn parse_subtitles() {
         //use env_logger;
         use std::fs;
-        use std::io::prelude::*;
 
         use crate::image::ImageArea;
 
         //let _ = env_logger::init();
 
-        let mut f = fs::File::open("./fixtures/example.sub").unwrap();
-        let mut buffer = vec![];
-        f.read_to_end(&mut buffer).unwrap();
+        let buffer = fs::read("./fixtures/example.sub").unwrap();
         let mut subs = VobsubParser::<(TimeSpan, VobSubIndexedImage)>::new(&buffer);
         let (time_span, img) = subs.next().expect("missing sub 1").unwrap();
         assert!(time_span.start.to_secs() - 49.4 < 0.1);
@@ -644,15 +635,12 @@ mod tests {
     fn parse_subtitles_times() {
         //use env_logger;
         use std::fs;
-        use std::io::prelude::*;
 
         use crate::image::ImageArea;
 
         //let _ = env_logger::init();
 
-        let mut f = fs::File::open("./fixtures/example.sub").unwrap();
-        let mut buffer = vec![];
-        f.read_to_end(&mut buffer).unwrap();
+        let buffer = fs::read("./fixtures/example.sub").unwrap();
         let mut subs = VobsubParser::<TimeSpan>::new(&buffer);
         let (time_span, img) = subs.next().expect("missing sub 1").unwrap();
         assert!(time_span.start.to_secs() - 49.4 < 0.1);
