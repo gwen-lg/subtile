@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn to_big_seconds() {
-        const TIME: f64 = 9_223_372_036_854_775.808; // i64::MAX + 1 as f64 / 1000
+        const TIME: f64 = 9_223_372_036_854_776.; // i64::MAX + 1 as f64 / 1000 + round
         let result = std::panic::catch_unwind(|| TimePoint::from_secs(TIME));
         assert!(result.is_err());
     }
