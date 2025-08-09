@@ -63,8 +63,7 @@ where
         .into_iter()
         .enumerate()
         .try_for_each(move |(i, img)| {
-            let mut filepath = folder_path.clone();
-            filepath.push(format!("{i:06}.png"));
+            let filepath = folder_path.clone().join(format!("{i:06}.png"));
             dump_image(&filepath, img.borrow()).map_err(|source| DumpError::DumpImage {
                 filename: filepath,
                 source,
