@@ -1,8 +1,9 @@
 use image::{Luma, LumaA, Primitive};
 use std::borrow::Borrow;
 
-/// Pixel convert function to remove alpha.
-/// Convert from [`LumaA`] to [`Luma`], and are useful to prepare image for `ocr`.
+/// Convert Pixel from [`LumaA`] to [`Luma`] to remove alpha.
+///
+/// This function is useful to prepare image for `ocr`.
 /// If the alpha and luma value of the pixel is greater than or equal to threshold values,
 /// the output is [`Primitive::DEFAULT_MIN_VALUE`] (equivalent to black).
 /// Otherwise, the returned value is [`Primitive::DEFAULT_MAX_VALUE`] (equivalent to white).
@@ -28,8 +29,9 @@ where
     }
 }
 
-/// Create and return a closure than convert a Pixel from [`LumaA`] to [`Luma`]
-/// with apply threasold value from function parameters. If the alpha and luma value
+/// Create and return a closure than convert a Pixel from [`LumaA`] to [`Luma`].
+///
+/// The closure apply threasold value from function parameters. If the alpha and luma value
 /// of the pixel is greater than or equal to threshold values, the output is [`Primitive::DEFAULT_MIN_VALUE`] (equivalent to black).
 /// Otherwise, the returned value is [`Primitive::DEFAULT_MAX_VALUE`] (equivalent to white).
 ///

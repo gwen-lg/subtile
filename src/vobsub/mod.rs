@@ -1,4 +1,6 @@
-//! This module reads DVD subtitles in `VobSub` format.  These are typically
+//! This module reads DVD subtitles in `VobSub` format.
+//!
+//! These are typically
 //! stored as two files: an `*.idx` file summarizing the subtitles, and an
 //! MPEG-2 Program Stream containing the actual subtitle packets.
 //!
