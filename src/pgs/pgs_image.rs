@@ -54,6 +54,14 @@ impl ImageSize for RleEncodedImage {
     }
 }
 
+impl<'a> RleEncodedImage {
+    /// Return and iterator over Pixels of the image.
+    #[must_use]
+    pub fn iter(&'a self) -> RlePixelIterator<'a, LumaA<u8>> {
+        self.into_iter()
+    }
+}
+
 /// Create an iterator over [`RleEncodedImage`] pixels.
 impl<'a> IntoIterator for &'a RleEncodedImage {
     type Item = LumaA<u8>;
