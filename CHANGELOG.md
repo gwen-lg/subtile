@@ -1,4 +1,27 @@
 # Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.4.1](https://github.com/gwen-lg/subtile/compare/v0.4.0...v0.4.1) - 2025-08-09
+
+### Fixed
+
+- add empty line between srt subtitles
+
+### Other
+
+- enable `manual-let-else` clippy lint + fix
+- run cargo update to update dependenies
+- *(taplo)* add check lint of Cargo.toml
+- *(taplo)* check toml formating of all toml files in root
+- replace elided lifetime with `'_` where it's confusing
+- add missing missing backticks
+# Changelog
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
