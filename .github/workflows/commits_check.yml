@@ -16,6 +16,10 @@ on:
     branches-ignore:
       - "wip*"
 
+env:
+  RUSTFLAGS: -D warnings
+  RUSTDOCFLAGS: -D warnings
+
 jobs:
   check-conventional-commits:
     name: Check Conventional Commits
