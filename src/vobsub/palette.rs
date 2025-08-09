@@ -44,9 +44,9 @@ fn hex_primary(input: &[u8]) -> IResult<&[u8], u8> {
 
 /// Parse a 3-byte hexadecimal `RGB` color.
 fn hex_rgb(input: &[u8]) -> IResult<&[u8], Rgb<u8>> {
-    let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
+    let (input, color) = (hex_primary, hex_primary, hex_primary).parse(input)?;
 
-    Ok((input, Rgb([red, green, blue])))
+    Ok((input, Rgb(color.into())))
 }
 
 /// The 16-color palette used by the subtitles.
