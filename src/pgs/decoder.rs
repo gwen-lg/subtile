@@ -53,7 +53,10 @@ impl PgsDecoder for DecodeTimeOnly {
                         start_time = Some(time);
                     }
                 }
-                _ => {
+                SegmentTypeCode::Pds
+                | SegmentTypeCode::Ods
+                | SegmentTypeCode::Pcs
+                | SegmentTypeCode::Wds => {
                     // Segment content are not taken into account, skipped
                     skip_segment(reader, &seg_header)?;
                 }
@@ -122,7 +125,7 @@ impl PgsDecoder for DecodeTimeImage {
                         start_time = Some(time);
                     }
                 }
-                _ => {
+                SegmentTypeCode::Pcs | SegmentTypeCode::Wds => {
                     // Segment not taken into account are skipped
                     skip_segment(reader, &seg_header)?;
                 }
