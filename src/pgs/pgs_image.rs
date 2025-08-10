@@ -1,7 +1,7 @@
 use super::pds::{Palette, PaletteEntry};
 use crate::image::{ImageSize, ToImage, ToOcrImage, ToOcrImageOpt};
 use image::{ImageBuffer, Luma, LumaA, Pixel, Primitive};
-use std::io::{ErrorKind, Read};
+use std::io::{ErrorKind, Read as _};
 
 /// Define a type of `fn` who covert pixel from `PaletteEntry` to a target color type.
 type PixelConversion<TargetColor> = fn(&PaletteEntry) -> TargetColor;

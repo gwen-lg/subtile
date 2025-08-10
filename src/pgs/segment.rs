@@ -1,4 +1,4 @@
-use super::{PgsError, ReadExt};
+use super::{PgsError, ReadExt as _};
 use std::{
     fmt,
     io::{BufRead, ErrorKind, Seek},

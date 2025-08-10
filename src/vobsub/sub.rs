@@ -11,10 +11,10 @@ use crate::{
     util::BytesFormatter,
     vobsub::{
         img::{VobSubRleImage, VobSubRleImageData},
-        IResultExt,
+        IResultExt as _,
     },
 };
-use iter_fixed::IntoIteratorFixed;
+use iter_fixed::IntoIteratorFixed as _;
 use log::{trace, warn};
 use nom::{
     bits::{bits, complete::take as take_bits},
@@ -24,7 +24,7 @@ use nom::{
     multi::{count, many_till},
     number::complete::be_u16,
     sequence::preceded,
-    IResult, Parser,
+    IResult, Parser as _,
 };
 use std::{
     cmp::Ordering, fmt::Debug, fs, iter::FusedIterator, marker::PhantomData, path::Path,
@@ -605,7 +605,7 @@ mod tests {
         //use env_logger;
         use std::fs;
 
-        use crate::image::ImageArea;
+        use crate::image::ImageArea as _;
 
         //let _ = env_logger::init();
 
@@ -636,7 +636,7 @@ mod tests {
         //use env_logger;
         use std::fs;
 
-        use crate::image::ImageArea;
+        use crate::image::ImageArea as _;
 
         //let _ = env_logger::init();
 

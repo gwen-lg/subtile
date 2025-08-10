@@ -1,6 +1,6 @@
 use nom::{
     bits::complete::{tag, take},
-    IResult, Parser,
+    IResult, Parser as _,
 };
 use std::fmt;
 

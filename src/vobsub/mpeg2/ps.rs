@@ -9,7 +9,7 @@ use nom::{
         complete::{tag as tag_bits, take as take_bits},
     },
     bytes::complete::tag as tag_bytes,
-    IResult, Parser,
+    IResult, Parser as _,
 };
 use std::fmt;
 

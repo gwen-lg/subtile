@@ -14,7 +14,7 @@ use super::{
     palette::{palette, DEFAULT_PALETTE},
     Palette, VobSubError,
 };
-use crate::{time::TimePoint, vobsub::IResultExt};
+use crate::{time::TimePoint, vobsub::IResultExt as _};
 
 /// Lang of a subtitle as reported in `VobSub` idx file.
 #[derive(Debug, Clone)]

@@ -15,7 +15,7 @@ use nom::{
     number::complete::{be_u16, be_u8},
     //do_parse, length_value, named, rest,
     IResult,
-    Parser,
+    Parser as _,
 };
 use std::fmt;
 

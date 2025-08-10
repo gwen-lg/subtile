@@ -1,7 +1,7 @@
 //! Try to guess the types of files on disk.
 
 use super::VobSubError;
-use std::{fs, io::Read, path::Path};
+use std::{fs, io::Read as _, path::Path};
 
 /// Internal helper function which looks for "magic" bytes at the start of
 /// a file.

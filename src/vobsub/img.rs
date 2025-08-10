@@ -2,21 +2,21 @@
 
 use core::fmt::{self, Debug};
 use image::{ImageBuffer, Luma, Pixel, Rgb, Rgba};
-use iter_fixed::IntoIteratorFixed;
+use iter_fixed::IntoIteratorFixed as _;
 use log::trace;
 use nom::{
     bits::complete::{tag as tag_bits, take as take_bits},
     branch::alt,
     combinator::value,
     sequence::preceded,
-    IResult, Parser,
+    IResult, Parser as _,
 };
 use thiserror::Error;
 
-use super::{palette::PaletteLuma, IResultExt, NomError, VobSubError};
+use super::{palette::PaletteLuma, IResultExt as _, NomError, VobSubError};
 use crate::{
     content::{Area, Size},
-    image::{ImageArea, ImageSize, ToImage, ToOcrImage, ToOcrImageOpt},
+    image::{ImageArea, ImageSize as _, ToImage, ToOcrImage, ToOcrImageOpt},
     util::BytesFormatter,
 };
 
