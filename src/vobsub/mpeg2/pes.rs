@@ -93,6 +93,7 @@ fn pts_dts(i: &[u8], flags: PtsDtsFlags) -> IResult<&[u8], Option<PtsDts>> {
 }
 
 /// Flags specifying which header data fields are present.
+#[expect(clippy::struct_excessive_bools)]
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct HeaderDataFlags {
     pub pts_dts_flags: PtsDtsFlags,
@@ -175,6 +176,7 @@ fn header_data(input: &[u8]) -> IResult<&[u8], HeaderData> {
 ///
 /// [pes]: http://dvd.sourceforge.net/dvdinfo/pes-hdr.html
 #[derive(Debug, Default, PartialEq, Eq)]
+#[expect(clippy::struct_excessive_bools)]
 pub struct Header {
     pub scrambling_control: u8,
     pub priority: bool,
