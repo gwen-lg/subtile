@@ -27,9 +27,9 @@ env:
   RUSTDOCFLAGS: -D warnings
 
 jobs:
-  ci_code_checks_and_tests:
+  rust_checks_and_tests:
     runs-on: ubuntu-latest
-    name: Code Checks and Tests
+    name: Rust Checks and Tests
     steps:
       - name: "Install rust-toolchain stable"
         uses: dtolnay/rust-toolchain@stable
@@ -41,8 +41,7 @@ jobs:
           rustc -vV
           cargo -vV
 
-      - name: "Checkout"
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -52,10 +51,8 @@ jobs:
         run: cargo install cargo-readme --locked
 
       - name: "Cargo formatting"
-        id: cargo_fmt
         if: $${{ always() }}
-        run: |
-          cargo fmt --all -- --check
+        run: cargo fmt --all -- --check
 
       - name: Check if readme is up to date
         id: cargo_readme
@@ -63,51 +60,25 @@ jobs:
         run: diff README.md <(cargo readme)
 
       - name: "Cargo doc"
-        id: cargo_doc
         env:
           RUSTDOCFLAGS: "-D warnings"
         if: $${{ always() }}
         run: cargo doc --locked
 
       - name: "Cargo clippy"
-        id: cargo_clippy
         if: $${{ always() }}
         run: cargo clippy --profile=test --locked
 
       - name: "Cargo test"
-        id: cargo_test
         if: $${{ always() }}
         run: cargo test --locked
-
-      - name: "Some checks failed"
-        if: ${{ failure() }}
-        run: |
-          echo "### :x: Checks Failed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "|Job|Status|" >> $GITHUB_STEP_SUMMARY
-          echo "|---|------|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo fmt|${{ steps.cargo_fmt.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo readme|${{ steps.cargo_readme.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo doc|${{ steps.cargo_doc.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo clippy|${{ steps.cargo_clippy.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo test|${{ steps.cargo_test.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Please check the failed jobs and fix where needed." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          exit 1
-
-      - name: "All checks passed"
-        if: ${{ success() }}
-        run: |
-          echo "### :white_check_mark: Checks Passed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
 
   typos_checks:
     runs-on: ubuntu-latest
     name: Typos check
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Check spelling of entire workspace
         uses: crate-ci/typos@master
 
@@ -115,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Toml check
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: "Cargo.toml format"
         if: $${{ always() }}
