@@ -20,6 +20,7 @@ impl Palette {
         Self { entries, offset }
     }
 
+    #[expect(clippy::cast_sign_loss)]
     pub fn get(&self, id: u8) -> Option<&PaletteEntry> {
         let idx = i16::from(id) + self.offset;
         self.entries.get(idx as usize)

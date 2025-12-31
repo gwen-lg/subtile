@@ -26,6 +26,7 @@ impl TimePoint {
 
     /// Convert to seconds
     #[must_use]
+    #[expect(clippy::cast_precision_loss)]
     pub fn to_secs(self) -> f64 {
         self.0 as f64 / 1000.
     }

@@ -29,6 +29,7 @@ impl Clock {
     }
 
     /// Convert a `Clock` value to seconds.
+    #[expect(clippy::cast_precision_loss)]
     pub fn as_seconds(self) -> f64 {
         let base = (self.value >> 9) as f64;
         let ext = (self.value & 0x1F) as f64;
