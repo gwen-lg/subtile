@@ -17,7 +17,7 @@ pub enum Error {
     LastInSequenceFlagInvalidValue { value: u8 },
 
     /// Value of flag `LastInSequence` is not managed by the current code.
-    #[error("`LastInSequenceFlag`::'{0}' flag is not mananged")]
+    #[error("`LastInSequenceFlag`::'{0}' flag is not managed")]
     LastInSequenceFlagNotManaged(LastInSequenceFlag),
 
     /// Failed during `Object ID` and `Object Version Number` skipping.
