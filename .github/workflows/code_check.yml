@@ -47,17 +47,15 @@ jobs:
         with:
           cache-on-failure: true # useful for don't rebuild cargo-readme and dependencies on fix after failure
 
-      - name: Install cargo-readme
-        run: cargo install cargo-readme --locked
-
       - name: "Cargo formatting"
         if: $${{ always() }}
         run: cargo fmt --all -- --check
 
       - name: Check if readme is up to date
-        id: cargo_readme
         if: $${{ always() }}
-        run: diff README.md <(cargo readme)
+        run: |
+          cargo install cargo-readme --locked
+          diff README.md <(cargo readme)
 
       - name: "Cargo doc"
         env:
