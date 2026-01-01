@@ -10,31 +10,26 @@ jobs:
   release-plz-release:
     name: Release-plz release
     runs-on: ubuntu-latest
-    environment: publishing
     if: ${{ github.repository_owner == 'gwen-lg' }}
     permissions:
       contents: write
-      id-token: write
     steps:
       - &checkout
         name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_PLZ_TOKEN }}
+          persist-credentials: false
       - &install-rust
         name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      - name: Authenticate with crates.io
-        uses: rust-lang/crates-io-auth-action@v1
-        id: auth
       - name: Run release-plz
         uses: release-plz/action@v0.5
         with:
           command: release
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   # Create a PR with the new versions and changelog, preparing the next release.
   release-plz-pr:
@@ -52,7 +47,7 @@ jobs:
         with:
           cache-on-failure: true # useful for don't rebuild cargo-readme and dependencies on fix after failure
       - name: Install cargo-readme
-        run: cargo install cargo-readme
+        run: cargo install cargo-readme --locked
       - *checkout
       - *install-rust
       - name: Run release-plz
