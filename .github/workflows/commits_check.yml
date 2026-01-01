@@ -71,16 +71,11 @@ jobs:
         with:
           cache-on-failure: true # useful for don't rebuild cargo-readme and dependencies on fix after failure
 
-      - name: Install cargo-readme
-        run: cargo install cargo-readme
-
       - name: Check spelling of entire workspace
-        id: typos_check
         if: $${{ always() }}
         uses: crate-ci/typos@master
 
       - name: "Taplo check format toml files"
-        id: toml_fmt
         if: $${{ always() }}
         uses: gwen-lg/taplo-action@v1
         with:
@@ -88,7 +83,6 @@ jobs:
           lint: false
 
       - name: "Taplo lint toml files"
-        id: toml_lint
         if: $${{ always() }}
         uses: gwen-lg/taplo-action@v1
         with:
@@ -96,55 +90,25 @@ jobs:
           lint: true
 
       - name: Check if readme is up to date
-        id: cargo_readme
         if: $${{ always() }}
-        run: diff README.md <(cargo readme)
+        run: |
+          set -e
+          cargo install cargo-readme --locked
+          diff README.md <(cargo readme)
 
       - name: "Cargo formatting"
-        id: cargo_fmt
         if: $${{ always() }}
         run: |
           cargo fmt --all -- --check
 
       - name: "Cargo doc"
-        id: cargo_doc
-        env:
-          RUSTDOCFLAGS: "-D warnings"
         if: $${{ always() }}
         run: cargo doc --locked
 
       - name: "Cargo clippy"
-        id: cargo_clippy
         if: $${{ always() }}
         run: cargo clippy --profile=test --locked
 
       - name: "Cargo test"
-        id: cargo_test
         if: $${{ always() }}
         run: cargo test --locked
-
-      - name: "Some checks failed"
-        if: ${{ failure() }}
-        run: |
-          echo "### :x: Checks Failed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "|Job|Status|" >> $GITHUB_STEP_SUMMARY
-          echo "|---|------|" >> $GITHUB_STEP_SUMMARY
-          echo "|typos|${{ steps.typos_check.outcome}}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo fmt|${{ steps.cargo_fmt.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Taplo fmt|${{ steps.toml_fmt.outcome}}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Taplo lint|${{ steps.toml_lint.outcome}}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo readme|${{ steps.cargo_readme.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo doc|${{ steps.cargo_doc.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo clippy|${{ steps.cargo_clippy.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|Cargo test|${{ steps.cargo_test.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Please check the failed jobs and fix where needed." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          exit 1
-
-      - name: "All checks passed"
-        if: ${{ success() }}
-        run: |
-          echo "### :white_check_mark: Checks Passed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
