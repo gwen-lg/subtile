@@ -68,6 +68,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "assert_matches2"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15832d94c458da98cac0ffa6eca52cc19c2a3c6c951058500a5ae8f01f0fdf56"
+
+[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -451,6 +457,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 name = "subtile"
 version = "0.4.1"
 dependencies = [
+ "assert_matches2",
  "cast",
  "compact_str",
  "env_logger",

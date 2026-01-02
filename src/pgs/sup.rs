@@ -73,9 +73,11 @@ where
 
 #[cfg(test)]
 mod tests {
+    use assert_matches2::assert_matches;
+
     use super::SupParser;
     use crate::{
-        pgs::DecodeTimeOnly,
+        pgs::{DecodeTimeImage, DecodeTimeOnly, PgsError},
         time::{TimePoint, TimeSpan},
     };
     use std::{fs::File, io::BufReader};
@@ -94,5 +96,63 @@ mod tests {
         let file_subtitles = parser.map(|sub| sub.unwrap()).collect::<Vec<_>>();
         assert!(file_subtitles.iter().eq(controls.iter()));
         assert!(file_subtitles.len() == 1);
+    }
+
+    #[test]
+    fn parse_sequence_without_ods() {
+        let controls = &[
+            Ok(TimeSpan::new(
+                TimePoint::from_msecs(4209),
+                TimePoint::from_msecs(7421),
+            )),
+            Ok(TimeSpan::new(
+                TimePoint::from_msecs(11717),
+                TimePoint::from_msecs(14511),
+            )),
+            Ok(TimeSpan::new(
+                TimePoint::from_msecs(16638),
+                TimePoint::from_msecs(18891),
+            )),
+            Ok(TimeSpan::new(
+                TimePoint::from_msecs(18974),
+                TimePoint::from_msecs(23228),
+            )),
+            Err(PgsError::MissingImage),
+            Ok(TimeSpan::new(
+                TimePoint::from_msecs(501_373),
+                TimePoint::from_msecs(505_543),
+            )),
+            Ok(TimeSpan::new(
+                TimePoint::from_msecs(506_378),
+                TimePoint::from_msecs(510_632),
+            )),
+            Ok(TimeSpan::new(
+                TimePoint::from_msecs(510_715),
+                TimePoint::from_msecs(516_513),
+            )),
+        ];
+
+        let parser = SupParser::<BufReader<File>, DecodeTimeImage>::from_file(
+            "./fixtures/sequence_without_ods.sup",
+        )
+        .unwrap();
+        let file_subtitles = parser.collect::<Vec<_>>();
+        assert_eq!(file_subtitles.len(), controls.len());
+        for (idx, (expected, actual)) in controls.iter().zip(file_subtitles).enumerate() {
+            match (expected, actual) {
+                (Ok(expected), Ok((actual_time, _))) => {
+                    assert_eq!(expected, &actual_time);
+                }
+                (Err(_), Err(actual)) => {
+                    assert_matches!(actual, PgsError::MissingImage);
+                }
+                (Err(err), Ok((actual_time, _))) => {
+                    panic!("assertion `expected == actual` failed for subtitle `{idx}`\nexpected: Err({err:?})\n  actual: Ok({actual_time:?},_)");
+                }
+                (Ok(expected), Err(err)) => {
+                    panic!("assertion `expected == actual` failed for subtitle `{idx}`\nexpected: Ok({expected:?})\n  actual: Err({err:?})");
+                }
+            }
+        }
     }
 }
