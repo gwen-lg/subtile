@@ -99,3 +99,10 @@ jobs:
         with:
           format: false
           lint: true
+
+  dependencies_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Machete
+        uses: bnjbvr/cargo-machete@main
