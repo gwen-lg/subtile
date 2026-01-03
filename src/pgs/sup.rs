@@ -95,4 +95,31 @@ mod tests {
         assert!(file_subtitles.iter().eq(controls.iter()));
         assert!(file_subtitles.len() == 1);
     }
+    
+    #[test]
+    fn parse_sequence_without_ods() {
+        let controls = &[
+            Ok(TimeSpan::new(TimePoint::from_msecs(4209), TimePoint::from_msecs(7421))),
+            Ok(TimeSpan::new(TimePoint::from_msecs(11717), TimePoint::from_msecs(14511))),
+            Ok(TimeSpan::new(TimePoint::from_msecs(16638), TimePoint::from_msecs(18891))),
+            Ok(TimeSpan::new(TimePoint::from_msecs(18974), TimePoint::from_msecs(23228))),
+            Err(PgsError::MissingImage),
+            Ok(TimeSpan::new(TimePoint::from_msecs(501373), TimePoint::from_msecs(505543))),
+            Ok(TimeSpan::new(TimePoint::from_msecs(506378), TimePoint::from_msecs(510632))),
+            Ok(TimeSpan::new(TimePoint::from_msecs(510715), TimePoint::from_msecs(516513))),
+        ];
+
+        let parser = SupParser::<BufReader<File>, DecodeTimeImage>::from_file("./fixtures/sequence_without_ods.sup").unwrap();
+        let file_subtitles = parser.collect::<Vec<_>>();
+        assert_eq!(file_subtitles.len(), controls.len());
+        for (should, actual) in controls.iter().zip(file_subtitles) {
+            assert_eq!(should.is_ok(), actual.is_ok());
+            if let Ok(should) = should {
+                let Ok(actual) = actual else {
+                    panic!("Should be Ok(), bus is Err()");
+                };
+                assert_eq!(should, &actual.0);
+            }
+        }
+    }
 }
