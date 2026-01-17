@@ -36,13 +36,12 @@ jobs:
 
   check-push-commits:
     if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    name: "Check: ${{ matrix.commit.message }}"
     strategy:
       fail-fast: false
       matrix:
         commit: ${{ github.event.commits }}
-
-    name: "Check: ${{ matrix.commit.message }}"
-    runs-on: ubuntu-latest
     concurrency:
       # For a given workflow, if we push to the same branch, cancel all previous builds on that branch.
       # Particularly useful for workflow triggered on release-plz sync.
