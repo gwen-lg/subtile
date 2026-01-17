@@ -46,6 +46,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2](https://github.com/gwen-lg/subtile/compare/v0.4.1...v0.4.2) - 2026-01-17
+
+### Fixed
+
+- typos in error msg `managed'
+
+### Other
+
+- add dependencies check with cargo-machete
+- Add test for continued parsing after seq without ods segment
+- *(toml)* enable arrays/keys reorder for dev-dependencies section
+- update dependencies
+- *(commits)* simplify the commits_check workflow
+- test rework cargo_readme step
+- simplify rust checks and tests job
+- move toml checks and lint in a dedicated job
+- move typos check in is own job.
+- *(deps)* bump actions/checkout from 4 to 6
+- enable `reorder_arrays` for Cargo.toml
+- enable pedantic group
+- update clippy lints setup in Cargo.toml
+- disable some clippy lints related to cast
+- disable lint `struct_excessive_bools` for two structs
+- rename palette prefix in member of Palette struct
+
 ## [0.4.0](https://github.com/gwen-lg/subtile/compare/v0.3.2...v0.4.0) - 2025-07-22
 
 ### Added
